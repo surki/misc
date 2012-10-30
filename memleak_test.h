@@ -13,79 +13,79 @@
 #include <vector>
 
 struct format {
-	const char *name;
-	GLenum token;
-	const char **extension;
+        const char *name;
+        GLenum token;
+        const char **extension;
 };
 
 const char *FXT1[] = {
-	"GL_3DFX_texture_compression_FXT1",
-	NULL
+        "GL_3DFX_texture_compression_FXT1",
+        NULL
 };
 
 const char *S3TC[] = {
-	"GL_EXT_texture_compression_s3tc",
-	NULL
+        "GL_EXT_texture_compression_s3tc",
+        NULL
 };
 
 const char *S3TC_srgb[] = {
-	"GL_EXT_texture_compression_s3tc",
-	"GL_EXT_texture_sRGB",
-	NULL
+        "GL_EXT_texture_compression_s3tc",
+        "GL_EXT_texture_sRGB",
+        NULL
 };
 
 const char *RGTC[] = {
-	"GL_ARB_texture_compression_rgtc",
-	NULL
+        "GL_ARB_texture_compression_rgtc",
+        NULL
 };
 
 const char *RGTC_signed[] = {
-	"GL_ARB_texture_compression_rgtc",
-	"GL_EXT_texture_snorm",
-	NULL
+        "GL_ARB_texture_compression_rgtc",
+        "GL_EXT_texture_snorm",
+        NULL
 };
 
 bool
 piglit_get_compressed_block_size(GLenum format,
-				 unsigned *bw, unsigned *bh, unsigned *bytes)
+                                 unsigned *bw, unsigned *bh, unsigned *bytes)
 {
-	switch (format) {
-	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-		*bw = *bh = 4;
-		*bytes = 8;
-		return true;
-	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_RED_RGTC1:
-	case GL_COMPRESSED_SIGNED_RED_RGTC1:
-	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
-	case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
-		*bw = *bh = 4;
-		*bytes = 8;
-		return true;
-	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-	case GL_COMPRESSED_RG_RGTC2:
-	case GL_COMPRESSED_SIGNED_RG_RGTC2:
-	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
-	case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
-		*bw = *bh = 4;
-		*bytes = 16;
-		return true;
-	case GL_COMPRESSED_RGB_FXT1_3DFX:
-	case GL_COMPRESSED_RGBA_FXT1_3DFX:
-		*bw = 8;
-		*bh = 4;
-		*bytes = 16;
-		return true;
-	default:
-		/* return something rather than uninitialized values */
-		*bw = *bh = *bytes = 1;
-		return false;
-	}
+        switch (format) {
+        case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+        case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+                *bw = *bh = 4;
+                *bytes = 8;
+                return true;
+        case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
+        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+        case GL_COMPRESSED_RED_RGTC1:
+        case GL_COMPRESSED_SIGNED_RED_RGTC1:
+        case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
+        case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
+                *bw = *bh = 4;
+                *bytes = 8;
+                return true;
+        case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+        case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
+        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+        case GL_COMPRESSED_RG_RGTC2:
+        case GL_COMPRESSED_SIGNED_RG_RGTC2:
+        case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
+        case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
+                *bw = *bh = 4;
+                *bytes = 16;
+                return true;
+        case GL_COMPRESSED_RGB_FXT1_3DFX:
+        case GL_COMPRESSED_RGBA_FXT1_3DFX:
+                *bw = 8;
+                *bh = 4;
+                *bytes = 16;
+                return true;
+        default:
+                /* return something rather than uninitialized values */
+                *bw = *bh = *bytes = 1;
+                return false;
+        }
 }
 
 /**
@@ -104,143 +104,143 @@ piglit_get_compressed_block_size(GLenum format,
  */
 GLfloat *
 piglit_rgbw_image(GLenum internalFormat, int w, int h,
-		  GLboolean alpha, GLenum basetype)
+                  GLboolean alpha, GLenum basetype)
 {
-	float red[4]   = {1.0, 0.0, 0.0, 0.0};
-	float green[4] = {0.0, 1.0, 0.0, 0.25};
-	float blue[4]  = {0.0, 0.0, 1.0, 0.5};
-	float white[4] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat *data;
-	int x, y;
+        float red[4]   = {1.0, 0.0, 0.0, 0.0};
+        float green[4] = {0.0, 1.0, 0.0, 0.25};
+        float blue[4]  = {0.0, 0.0, 1.0, 0.5};
+        float white[4] = {1.0, 1.0, 1.0, 1.0};
+        GLfloat *data;
+        int x, y;
 
-	if (!alpha) {
-		red[3] = 1.0;
-		green[3] = 1.0;
-		blue[3] = 1.0;
-		white[3] = 1.0;
-	}
+        if (!alpha) {
+                red[3] = 1.0;
+                green[3] = 1.0;
+                blue[3] = 1.0;
+                white[3] = 1.0;
+        }
 
-	switch (basetype) {
-	case GL_UNSIGNED_NORMALIZED:
-		break;
+        switch (basetype) {
+        case GL_UNSIGNED_NORMALIZED:
+                break;
 
-	case GL_SIGNED_NORMALIZED:
-		for (x = 0; x < 4; x++) {
-			red[x] = red[x] * 2 - 1;
-			green[x] = green[x] * 2 - 1;
-			blue[x] = blue[x] * 2 - 1;
-			white[x] = white[x] * 2 - 1;
-		}
-		break;
+        case GL_SIGNED_NORMALIZED:
+                for (x = 0; x < 4; x++) {
+                        red[x] = red[x] * 2 - 1;
+                        green[x] = green[x] * 2 - 1;
+                        blue[x] = blue[x] * 2 - 1;
+                        white[x] = white[x] * 2 - 1;
+                }
+                break;
 
-	case GL_FLOAT:
-		for (x = 0; x < 4; x++) {
-			red[x] = red[x] * 10 - 5;
-			green[x] = green[x] * 10 - 5;
-			blue[x] = blue[x] * 10 - 5;
-			white[x] = white[x] * 10 - 5;
-		}
-		break;
+        case GL_FLOAT:
+                for (x = 0; x < 4; x++) {
+                        red[x] = red[x] * 10 - 5;
+                        green[x] = green[x] * 10 - 5;
+                        blue[x] = blue[x] * 10 - 5;
+                        white[x] = white[x] * 10 - 5;
+                }
+                break;
 
-	default:
-		assert(0);
-	}
+        default:
+                assert(0);
+        }
 
-	data = (GLfloat *)malloc(w * h * 4 * sizeof(GLfloat));
+        data = (GLfloat *)malloc(w * h * 4 * sizeof(GLfloat));
 
-	for (y = 0; y < h; y++) {
-		for (x = 0; x < w; x++) {
-			const int size = w > h ? w : h;
-			const float *color;
+        for (y = 0; y < h; y++) {
+                for (x = 0; x < w; x++) {
+                        const int size = w > h ? w : h;
+                        const float *color;
 
-			if (x < w / 2 && y < h / 2)
-				color = red;
-			else if (y < h / 2)
-				color = green;
-			else if (x < w / 2)
-				color = blue;
-			else
-				color = white;
+                        if (x < w / 2 && y < h / 2)
+                                color = red;
+                        else if (y < h / 2)
+                                color = green;
+                        else if (x < w / 2)
+                                color = blue;
+                        else
+                                color = white;
 
-			switch (internalFormat) {
-			case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-			case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-			case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-			case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-			case GL_COMPRESSED_RGB_FXT1_3DFX:
-			case GL_COMPRESSED_RGBA_FXT1_3DFX:
-			case GL_COMPRESSED_RED_RGTC1:
-			case GL_COMPRESSED_SIGNED_RED_RGTC1:
-			case GL_COMPRESSED_RG_RGTC2:
-			case GL_COMPRESSED_SIGNED_RG_RGTC2:
-			case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
-			case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
-			case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
-			case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-				if (size == 4)
-					color = red;
-				else if (size == 2)
-					color = green;
-				else if (size == 1)
-					color = blue;
-				break;
-			default:
-				break;
-			}
+                        switch (internalFormat) {
+                        case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+                        case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+                        case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+                        case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+                        case GL_COMPRESSED_RGB_FXT1_3DFX:
+                        case GL_COMPRESSED_RGBA_FXT1_3DFX:
+                        case GL_COMPRESSED_RED_RGTC1:
+                        case GL_COMPRESSED_SIGNED_RED_RGTC1:
+                        case GL_COMPRESSED_RG_RGTC2:
+                        case GL_COMPRESSED_SIGNED_RG_RGTC2:
+                        case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
+                        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+                        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
+                        case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+                                if (size == 4)
+                                        color = red;
+                                else if (size == 2)
+                                        color = green;
+                                else if (size == 1)
+                                        color = blue;
+                                break;
+                        default:
+                                break;
+                        }
 
-			memcpy(data + (y * w + x) * 4, color,
-			       4 * sizeof(float));
-		}
-	}
+                        memcpy(data + (y * w + x) * 4, color,
+                               4 * sizeof(float));
+                }
+        }
 
-	return data;
+        return data;
 }
 
 GLuint
 piglit_rgbw_texture(GLenum internalFormat, int w, int h, GLboolean mip,
-		    GLboolean alpha, GLenum basetype)
+                    GLboolean alpha, GLenum basetype)
 {
-	int size, level;
-	GLuint tex;
+        int size, level;
+        GLuint tex;
 
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	if (mip) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-				GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GL_LINEAR_MIPMAP_NEAREST);
-	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-				GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GL_NEAREST);
-	}
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if (mip) {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                                GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                                GL_LINEAR_MIPMAP_NEAREST);
+        } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                                GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                                GL_NEAREST);
+        }
 
-	for (level = 0, size = w > h ? w : h; size > 0; level++, size >>= 1) {
-		GLfloat *data =
-			piglit_rgbw_image(internalFormat, w, h,
-					  alpha, basetype);
+        for (level = 0, size = w > h ? w : h; size > 0; level++, size >>= 1) {
+                GLfloat *data =
+                        piglit_rgbw_image(internalFormat, w, h,
+                                          alpha, basetype);
 
-		glTexImage2D(GL_TEXTURE_2D, level,
-			     internalFormat,
-			     w, h, 0,
-			     GL_RGBA, GL_FLOAT, data);
+                glTexImage2D(GL_TEXTURE_2D, level,
+                             internalFormat,
+                             w, h, 0,
+                             GL_RGBA, GL_FLOAT, data);
 
-		free(data);
+                free(data);
 
-		if (!mip)
-			break;
+                if (!mip)
+                        break;
 
-		if (w > 1)
-			w >>= 1;
-		if (h > 1)
-			h >>= 1;
-	}
+                if (w > 1)
+                        w >>= 1;
+                if (h > 1)
+                        h >>= 1;
+        }
 
-	return tex;
+        return tex;
 }
 
 /**
@@ -250,10 +250,10 @@ piglit_rgbw_texture(GLenum internalFormat, int w, int h, GLboolean mip,
 unsigned
 piglit_compressed_image_size(GLenum format, unsigned width, unsigned height)
 {
-	unsigned bw, bh, bytes;
-	bool b = piglit_get_compressed_block_size(format, &bw, &bh, &bytes);
-	assert(b);
-	return ((width + bw - 1) / bw) * ((height + bh - 1) / bh) * bytes;
+        unsigned bw, bh, bytes;
+        bool b = piglit_get_compressed_block_size(format, &bw, &bh, &bytes);
+        assert(b);
+        return ((width + bw - 1) / bw) * ((height + bh - 1) / bh) * bytes;
 }
 
 /**
@@ -286,61 +286,238 @@ piglit_compressed_image_size(GLenum format, unsigned width, unsigned height)
  */
 GLuint
 piglit_checkerboard_texture(GLuint tex, unsigned level,
-			    unsigned width, unsigned height,
-			    unsigned horiz_square_size,
-			    unsigned vert_square_size,
-			    const float *black, const float *white)
+                            unsigned width, unsigned height,
+                            unsigned horiz_square_size,
+                            unsigned vert_square_size,
+                            const float *black, const float *white)
 {
-	static const GLfloat border_color[4] = { 1.0, 0.0, 0.0, 1.0 };
-	unsigned i;
-	unsigned j;
+        static const GLfloat border_color[4] = { 1.0, 0.0, 0.0, 1.0 };
+        unsigned i;
+        unsigned j;
 
-	float *const tex_data = (float *)malloc(width * height * (4 * sizeof(float)));
-	float *texel = tex_data;
+        float *const tex_data = (float *)malloc(width * height * (4 * sizeof(float)));
+        float *texel = tex_data;
 
-	for (i = 0; i < height; i++) {
-		const unsigned row = i / vert_square_size;
+        for (i = 0; i < height; i++) {
+                const unsigned row = i / vert_square_size;
 
-		for (j = 0; j < width; j++) {
-			const unsigned col = j / horiz_square_size;
+                for (j = 0; j < width; j++) {
+                        const unsigned col = j / horiz_square_size;
 
-			if ((row ^ col) & 1) {
-				memcpy(texel, white, 4 * sizeof(float));
-			} else {
-				memcpy(texel, black, 4 * sizeof(float));
-			}
+                        if ((row ^ col) & 1) {
+                                memcpy(texel, white, 4 * sizeof(float));
+                        } else {
+                                memcpy(texel, black, 4 * sizeof(float));
+                        }
 
-			texel += 4;
-		}
-	}
+                        texel += 4;
+                }
+        }
 
 
-	if (tex == 0) {
-		glGenTextures(1, &tex);
+        if (tex == 0) {
+                glGenTextures(1, &tex);
 
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-				GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-				GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-				GL_CLAMP_TO_BORDER);
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR,
-				 border_color);
-	} else {
-		glBindTexture(GL_TEXTURE_2D, tex);
-	}
+                glBindTexture(GL_TEXTURE_2D, tex);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                                GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                                GL_LINEAR);
 
-	glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
-		     GL_FLOAT, tex_data);
+                /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, */
+                /*              GL_NEAREST); */
+                /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, */
+                /*              GL_NEAREST); */
+                /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, */
+                /*              GL_CLAMP_TO_BORDER); */
+                /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, */
+                /*              GL_CLAMP_TO_BORDER); */
+                /* glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, */
+                /*               border_color); */
+        } else {
+                glBindTexture(GL_TEXTURE_2D, tex);
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_FLOAT, tex_data);
 
         free(tex_data);
 
-	return tex;
+        return tex;
 }
 
+typedef unsigned char uint8;
+typedef signed short int16;
+typedef signed int int32;
+typedef unsigned int uint32;
+
+typedef struct _DDAHEADER
+{
+    char HeaderID[4];                       // Contains "DDSA" if valid DDS animation file
+
+    int16 VersionNumber;             // 1 for now
+
+    int16 AnimHeaderSize;           // Number of bytes in AnimationHeader
+    int16 AnimationImages;           // Number of DDS images in animation
+
+    int16 DDSChunkHeaderSize;        // sizeof(DDACHUNKHEADER)
+
+    uint32 width;                    // Dimensions of animation
+    uint32 height;
+} DDAHEADER;
+
+typedef struct _DDACHUNKHEADER
+{
+    uint32 NextImageHeaderOffset;    // Offset in bytes from end of this header structure to the beginning of next image header structure
+
+    int32 ImageNumber;               // Image index number 1 for 1st, 2 for 2nd. etc.
+
+    int32 DDSImageSize;              // Image size in bytes of raw DDS file to follow this header
+} DDACHUNKHEADER;
+
+
+typedef uint8 BYTE;
+typedef uint32 DWORD_;
+
+typedef struct tagDDPIXELFORMAT {
+        DWORD_ dwSize;   // size of this structure (must be 32)
+        DWORD_ dwFlags;  // see DDPF_*
+        DWORD_ dwFourCC;
+        DWORD_ dwRGBBitCount;    // Total number of bits for RGB formats
+        DWORD_ dwRBitMask;
+        DWORD_ dwGBitMask;
+        DWORD_ dwBBitMask;
+        DWORD_ dwRGBAlphaBitMask;
+} DDPIXELFORMAT;
+
+typedef struct tagDDCAPS2 {
+        DWORD_ dwCaps1;  // Zero or more of the DDSCAPS_* members
+        DWORD_ dwCaps2;  // Zero or more of the DDSCAPS2_* members
+        DWORD_ dwReserved[2];
+} DDCAPS2;
+
+typedef struct tagDDSURFACEDESC2 {
+        DWORD_ dwSize;   // size of this structure (must be 124)
+        DWORD_ dwFlags;  // combination of the DDSS_* flags
+        DWORD_ dwHeight;
+        DWORD_ dwWidth;
+        DWORD_ dwPitchOrLinearSize;
+        DWORD_ dwDepth;  // Depth of a volume texture
+        DWORD_ dwMipMapCount;
+        DWORD_ dwReserved1[11];
+        DDPIXELFORMAT ddpfPixelFormat;
+        DDCAPS2 ddsCaps;
+        DWORD_ dwReserved2;
+} DDSURFACEDESC2;
+
+#define MAKEFOURCC(ch0, ch1, ch2, ch3) \
+        ((DWORD_)(BYTE)(ch0) | ((DWORD_)(BYTE)(ch1) << 8) |   \
+    ((DWORD_)(BYTE)(ch2) << 16) | ((DWORD_)(BYTE)(ch3) << 24 ))
+
+#define FOURCC_DXT1     MAKEFOURCC('D','X','T','1')
+#define FOURCC_DXT2     MAKEFOURCC('D','X','T','2')
+#define FOURCC_DXT3     MAKEFOURCC('D','X','T','3')
+#define FOURCC_DXT4     MAKEFOURCC('D','X','T','4')
+#define FOURCC_DXT5     MAKEFOURCC('D','X','T','5')
+
+GLuint load_dds_file(const std::string imgPath)
+{
+    FILE *fp;
+
+    /* try to open the file */
+    fp = fopen(imgPath.c_str(), "rb");
+    if (fp == NULL)
+        return 0;
+
+    /* verify the type of file */
+    char filecode[4];
+    fread(filecode, 1, 4, fp);
+    if (strncmp(filecode, "DDS ", 4) != 0) {
+        fclose(fp);
+        return 0;
+    }
+
+    /* get the surface desc */
+    DDSURFACEDESC2 ddSurfaceInfo;
+    memset(&ddSurfaceInfo, 0, sizeof(ddSurfaceInfo));
+    fread(&ddSurfaceInfo, sizeof(ddSurfaceInfo), 1, fp);
+
+    unsigned char * buffer;
+    unsigned int bufsize;
+
+    /* how big is it going to be including all mipmaps? */
+    bufsize = ddSurfaceInfo.dwMipMapCount > 1 ?
+        ddSurfaceInfo.dwPitchOrLinearSize * 2 :
+        ddSurfaceInfo.dwPitchOrLinearSize;
+    buffer = (unsigned char*)malloc(bufsize * sizeof(unsigned char));
+    assert(buffer);
+    memset(buffer, 0, bufsize * sizeof(unsigned char));
+    fread(buffer, 1, bufsize, fp);
+
+    /* close the file pointer */
+    fclose(fp);
+
+        // unsigned int components  = (ddSurfaceInfo.fourCC == FOURCC_DXT1) ? 3 : 4;
+    unsigned int format;
+
+    switch(ddSurfaceInfo.ddpfPixelFormat.dwFourCC)
+    {
+    case FOURCC_DXT1:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+        break;
+    case FOURCC_DXT3:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        break;
+    case FOURCC_DXT5:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        break;
+    default:
+        return 0;
+    }// Create one OpenGL texture
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    /* glPixelStorei(GL_UNPACK_ALIGNMENT, 2); */
+    /* glPixelStorei(GL_UNPACK_ROW_LENGTH, 0); */
+    /* glPixelStorei(GL_UNPACK_SKIP_ROWS, 0); */
+    /* glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0); */
+
+    // Set the appropriate texture parameters.  These parameters are saved
+    // with the currently bound texture.  They will automatically be used
+    // when the texture is re-bound.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP); */
+    /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP); */
+    /* glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); */
+
+    unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+    unsigned int offset = 0;
+
+    /* load the mipmaps */
+    for (unsigned int level = 0; level <= ddSurfaceInfo.dwMipMapCount &&
+             (ddSurfaceInfo.dwWidth || ddSurfaceInfo.dwHeight); ++level)
+    {
+        unsigned int size = ((ddSurfaceInfo.dwWidth+3)/4)*((ddSurfaceInfo.dwHeight+3)/4)*blockSize;
+        // printf("width = %d height = %d mipMapCount=%d size=%d\n",
+        //        g_width, g_height, mipMapCount, size);
+        glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
+                               0, size, buffer + offset);
+
+        offset += size;
+        ddSurfaceInfo.dwWidth  /= 2;
+        ddSurfaceInfo.dwHeight /= 2;
+    }
+
+    free(buffer);
+    assert(textureID && "Invalid DDS file, textureID is zero");
+
+    return textureID;
+}
 
 // ====================
 
@@ -375,7 +552,7 @@ struct BITMAPFILEHEADER
   short bfReserved2;
   int bfOffBits;
 } __attribute__ ((packed));
- 
+
 struct BITMAPINFOHEADER
 {
     int biSize;

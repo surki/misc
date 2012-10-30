@@ -11,26 +11,27 @@ Window   g_window;
 bool     g_bDoubleBuffered = GL_TRUE;
 unsigned int g_width = 1360;
 unsigned int g_height = 768;
+unsigned int g_generateCompressedTexture = 0;
 
 #define FORMAT(t, ext) { #t, t, ext }
 static struct format formats[] = {
-	FORMAT(GL_COMPRESSED_RGB_FXT1_3DFX, FXT1),
-	FORMAT(GL_COMPRESSED_RGBA_FXT1_3DFX, FXT1),
+        FORMAT(GL_COMPRESSED_RGB_FXT1_3DFX, FXT1),
+        FORMAT(GL_COMPRESSED_RGBA_FXT1_3DFX, FXT1),
 
-	FORMAT(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, S3TC),
-	FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, S3TC),
-	FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, S3TC),
-	FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, S3TC),
+        FORMAT(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, S3TC),
+        FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, S3TC),
+        FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, S3TC),
+        FORMAT(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, S3TC),
 
-	FORMAT(GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, S3TC_srgb),
-	FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, S3TC_srgb),
-	FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, S3TC_srgb),
-	FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, S3TC_srgb),
+        FORMAT(GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, S3TC_srgb),
+        FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, S3TC_srgb),
+        FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, S3TC_srgb),
+        FORMAT(GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, S3TC_srgb),
 
-	FORMAT(GL_COMPRESSED_RED_RGTC1_EXT, RGTC),
-	FORMAT(GL_COMPRESSED_SIGNED_RED_RGTC1_EXT, RGTC_signed),
-	FORMAT(GL_COMPRESSED_RED_GREEN_RGTC2_EXT, RGTC),
-	FORMAT(GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT, RGTC_signed),
+        FORMAT(GL_COMPRESSED_RED_RGTC1_EXT, RGTC),
+        FORMAT(GL_COMPRESSED_SIGNED_RED_RGTC1_EXT, RGTC_signed),
+        FORMAT(GL_COMPRESSED_RED_GREEN_RGTC2_EXT, RGTC),
+        FORMAT(GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT, RGTC_signed),
 };
 
 void Init(int argc, char *argv[]);
@@ -39,6 +40,9 @@ void InitGL();
 GLuint GenerateTexture(unsigned int width = 600, unsigned int height = 600, bool mipmap = false);
 GLuint GenerateCompressedTexture(unsigned int width = 600, unsigned int height = 600,
                                  GLenum format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, bool mipmap = false);
+GLuint GenerateCompressedTextureFromFile(string filename,
+                                         unsigned int width,
+                                         unsigned int height);
 void DrawTexture(GLuint texid);
 
 int main(int argc, char *argv[])
@@ -58,7 +62,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        while (XPending(g_pDisplay) > 0) 
+        while (XPending(g_pDisplay) > 0)
         {
             XNextEvent(g_pDisplay, &event);
 
@@ -83,6 +87,12 @@ void Init(int argc, char *argv[])
 
     assert(argc >= 3);
 
+    char *gen = getenv("COMPRESSED_TEXTURE_GENERATE");
+    if (gen && strcmp(gen, "1") == 0)
+    {
+        g_generateCompressedTexture = 1;
+    }
+
     noOfTextures = atoi(argv[1]);
     noOfCompressedTextures = atoi(argv[2]);
 
@@ -96,7 +106,11 @@ void Init(int argc, char *argv[])
     // Create no. of compressed textures.
     for (int i = 0; i < noOfCompressedTextures; i++)
     {
-        texID = GenerateCompressedTexture(g_width, g_height);
+        if (g_generateCompressedTexture)
+            texID = GenerateCompressedTexture(g_width, g_height);
+        else
+            texID = GenerateCompressedTextureFromFile("test.dds", g_width, g_height);
+
         g_compressedTextures.push_back(texID);
     }
 }
@@ -108,37 +122,6 @@ void Render()
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // glBegin(GL_TRIANGLES);
-    // {
-    //     glColor3f(1,0,0);
-    //     glVertex2f(0,0);
-
-    //     glColor3f(0,1,0);
-    //     glVertex2f(g_width,0);
-
-    //     glColor3f(0,0,1);
-    //     glVertex2f(g_width, g_height);
-    // }
-    // glEnd();
-
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // glMatrixMode(GL_MODELVIEW);
-    // glLoadIdentity();
-
-    // glMatrixMode(GL_PROJECTION);
-    // glLoadIdentity();
-
-    // glOrtho(0, g_width, 0, g_height, -1, 1);
-    // glMatrixMode(GL_MODELVIEW);
-    // glLoadIdentity();
-    // glTranslatef(-1.5f,0.0f,-6.0f);                 // Move Left 1.5 Units And Into The Screen 6.0
-    // glBegin(GL_QUADS);                      // Draw A Quad
-    //     glVertex3f(-1.0f, 1.0f, 0.0f);              // Top Left
-    //     glVertex3f( 1.0f, 1.0f, 0.0f);              // Top Right
-    //     glVertex3f( 1.0f,-1.0f, 0.0f);              // Bottom Right
-    //     glVertex3f(-1.0f,-1.0f, 0.0f);              // Bottom Left
-    // glEnd();
-
     if (g_textures.size())
     {
         n1 = n1 % g_textures.size();
@@ -149,107 +132,113 @@ void Render()
     if (g_compressedTextures.size())
     {
         n2 = n2 % g_compressedTextures.size();
-        //printf("%d %d\n", g_compressedTextures.size(), n2);
-        //DrawTexture(g_compressedTextures[n2]);
         DrawTexture(g_compressedTextures[n2]);
         //SaveTextureIntoBmpFile("/tmp/test.bmp", g_compressedTextures[0], g_width, g_height);
-        // exit(1);
         n2++;
     }
 
     glXSwapBuffers( g_pDisplay, g_window );
-
-    // sleep(1);
-    // exit(1);
-    // sleep(1);
+    usleep(16000);
 }
 
 GLuint GenerateCompressedTexture(unsigned int width, unsigned int height,
                                  GLenum format, bool mipmap)
 {
-	GLuint tex, tex_src;
-	bool pass;
-	int level;
-	unsigned bw, bh, bs;
+        GLuint tex, tex_src;
+        bool pass;
+        int level;
+        unsigned bw, bh, bs;
 
         // We just generate a simple texture with no mipmap
-        
-	piglit_get_compressed_block_size(format, &bw, &bh, &bs);
-	glClearColor(0.5, 0.5, 0.5, 0.5);
-	glClear(GL_COLOR_BUFFER_BIT);
 
-	tex_src = piglit_rgbw_texture(format, width, height,
-				      GL_FALSE /* mipmap */, GL_FALSE,
-				      GL_UNSIGNED_NORMALIZED);
-	glGenTextures(1, &tex);
+        piglit_get_compressed_block_size(format, &bw, &bh, &bs);
+        glClearColor(0.5, 0.5, 0.5, 0.5);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        tex_src = piglit_rgbw_texture(format, width, height,
+                                      GL_FALSE /* mipmap */, GL_FALSE,
+                                      GL_UNSIGNED_NORMALIZED);
+        glGenTextures(1, &tex);
 
         for (level = 0; (height >> level) > 0; level++) {
-		int w, h;
-		int expected_size, size;
-		void *compressed;
+                int w, h;
+                int expected_size, size;
+                void *compressed;
 
-		w = width >> level;
-		h = height >> level;
-		expected_size = piglit_compressed_image_size(format, w, h);
+                w = width >> level;
+                h = height >> level;
+                expected_size = piglit_compressed_image_size(format, w, h);
 
-		glBindTexture(GL_TEXTURE_2D, tex_src);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, level,
-					 GL_TEXTURE_COMPRESSED_IMAGE_SIZE,
-					 &size);
+                glBindTexture(GL_TEXTURE_2D, tex_src);
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, level,
+                                         GL_TEXTURE_COMPRESSED_IMAGE_SIZE,
+                                         &size);
 
                 int isCompressed = 0;
                 glGetTexLevelParameteriv(GL_TEXTURE_2D, level,
-					 GL_TEXTURE_COMPRESSED_ARB,
-					 &isCompressed);
+                                         GL_TEXTURE_COMPRESSED_ARB,
+                                         &isCompressed);
                 assert(isCompressed);
 
                 int iFormat = 0;
                 glGetTexLevelParameteriv(GL_TEXTURE_2D, level,
-					 GL_TEXTURE_INTERNAL_FORMAT,
-					 &iFormat);
+                                         GL_TEXTURE_INTERNAL_FORMAT,
+                                         &iFormat);
                 assert(iFormat == format);
 
                 if (size != expected_size) {
-			fprintf(stderr, "Format %d level %d (%dx%d) size %d "
-				"doesn't match expected size %d\n",
-				format, level, w, h, size, expected_size);
+                        fprintf(stderr, "Format %d level %d (%dx%d) size %d "
+                                "doesn't match expected size %d\n",
+                                format, level, w, h, size, expected_size);
                         exit(1);
-		}
+                }
 
                 // printf("isCompressed=%d iFormat=%d size=%d DXT5=%d\n",
                 //        isCompressed, iFormat, size, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
 
-		compressed = malloc(size);
+                compressed = malloc(size);
 
-                
-		glGetCompressedTexImage(GL_TEXTURE_2D, level, compressed);
 
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glCompressedTexImage2D(GL_TEXTURE_2D, level, format,
-				       w, h, 0, size, compressed);
+                glGetCompressedTexImage(GL_TEXTURE_2D, level, compressed);
+
+                glBindTexture(GL_TEXTURE_2D, tex);
+                glCompressedTexImage2D(GL_TEXTURE_2D, level, format,
+                                       w, h, 0, size, compressed);
                 assert(glGetError() == GL_NO_ERROR);
 
                 {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-                    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+                    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+                    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+                    // glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
                 }
 
-		free(compressed);
+                free(compressed);
 
                 // No mipmap for now
                 if (!mipmap)
                     break;
-                
-	}
 
-	glDeleteTextures(1, &tex_src);
-	glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
-	return tex;
+        glDeleteTextures(1, &tex_src);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return tex;
+}
+
+GLuint GenerateCompressedTextureFromFile(string filename,
+                                         unsigned int width,
+                                         unsigned int height)
+{
+    GLuint texID;
+
+    texID = load_dds_file(filename);
+    assert(texID && "Couldn't load DDS file");
+
+    return texID;
 }
 
 GLuint GenerateTexture(unsigned int width, unsigned int height, bool mipmap)
@@ -334,7 +323,7 @@ void InitGL()
 
     if( visualInfo == NULL )
     {
-    	// If we can't find a double-bufferd visual, try for a single-buffered visual...
+        // If we can't find a double-bufferd visual, try for a single-buffered visual...
         visualInfo = glXChooseVisual( g_pDisplay, DefaultScreen(g_pDisplay), singleBufferVisual );
 
         if( visualInfo == NULL )
@@ -347,21 +336,21 @@ void InitGL()
     }
 
     // Create an OpenGL rendering context
-    glxContext = glXCreateContext( g_pDisplay, 
-                                   visualInfo, 
+    glxContext = glXCreateContext( g_pDisplay,
+                                   visualInfo,
                                    NULL,      // No sharing of display lists
                                    GL_TRUE ); // Direct rendering if possible
-                           
+
     if( glxContext == NULL )
     {
         fprintf(stderr, "glxsimple: %s\n", "could not create rendering context");
         exit(1);
     }
 
-    // Create an X colormap since we're probably not using the default visual 
-    colorMap = XCreateColormap( g_pDisplay, 
-                                RootWindow(g_pDisplay, visualInfo->screen), 
-                                visualInfo->visual, 
+    // Create an X colormap since we're probably not using the default visual
+    colorMap = XCreateColormap( g_pDisplay,
+                                RootWindow(g_pDisplay, visualInfo->screen),
+                                visualInfo->visual,
                                 AllocNone );
 
     windowAttributes.colormap     = colorMap;
@@ -386,10 +375,10 @@ void InitGL()
             g_height = scrInfo->height;
         }
     }
-    
+
     // Create an X window with the selected visual
-    g_window = XCreateWindow( g_pDisplay, 
-                              RootWindow(g_pDisplay, visualInfo->screen), 
+    g_window = XCreateWindow( g_pDisplay,
+                              RootWindow(g_pDisplay, visualInfo->screen),
                               0, 0,     // x/y position of top-left outside corner of the window
                               g_width, g_height, // Width and height of window
                               0,        // Border width
@@ -404,12 +393,6 @@ void InitGL()
 
     // Request the X window to be displayed on the screen
     XMapWindow( g_pDisplay, g_window );
-
-    // glClearColor(0, 0, 0, 0);
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-    // glEnable( GL_TEXTURE_2D );
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
