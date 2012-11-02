@@ -89,6 +89,8 @@ void Init(int argc, char *argv[])
 
     InitGL();
 
+    query_print_video_memory();
+
     assert(argc >= 3);
 
     char *gen = getenv("COMPRESSED_TEXTURE_GENERATE");
@@ -160,6 +162,7 @@ void Render()
     }
 
     glXSwapBuffers( g_pDisplay, g_window );
+    query_print_video_memory();
     usleep(16000);
 }
 

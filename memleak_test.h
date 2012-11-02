@@ -45,6 +45,28 @@ const char *RGTC_signed[] = {
         NULL
 };
 
+void query_print_video_memory()
+{
+#define GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX          0x9047
+#define GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX    0x9048
+#define GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX  0x9049
+#define GPU_MEMORY_INFO_EVICTION_COUNT_NVX            0x904A
+#define GPU_MEMORY_INFO_EVICTED_MEMORY_NVX            0x904B
+
+    GLint vidmem = 0, totalmem = 0, curr_avail_vidmem = 0, evict_cnt = 0, evict_mem = 0;
+    glGetIntegerv(GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &vidmem);
+    glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalmem);
+    glGetIntegerv(GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &curr_avail_vidmem);
+    glGetIntegerv(GPU_MEMORY_INFO_EVICTION_COUNT_NVX, &evict_cnt);
+    glGetIntegerv(GPU_MEMORY_INFO_EVICTED_MEMORY_NVX, &evict_mem);
+
+    printf("Total memory available = %d\n", totalmem);
+    printf("Dedicated video memory = %d\n", vidmem);
+    printf("Currently available dedicated video memory = %d\n", curr_avail_vidmem);
+    printf("Total eviction count = %d\n", evict_cnt);
+    printf("Total eviction memory size = %d\n", evict_mem);
+}
+
 bool
 piglit_get_compressed_block_size(GLenum format,
                                  unsigned *bw, unsigned *bh, unsigned *bytes)
