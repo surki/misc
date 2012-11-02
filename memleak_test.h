@@ -480,10 +480,10 @@ GLuint load_dds_file(const std::string imgPath)
 
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, textureID);
-    /* glPixelStorei(GL_UNPACK_ALIGNMENT, 2); */
-    /* glPixelStorei(GL_UNPACK_ROW_LENGTH, 0); */
-    /* glPixelStorei(GL_UNPACK_SKIP_ROWS, 0); */
-    /* glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0); */
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
 
     // Set the appropriate texture parameters.  These parameters are saved
     // with the currently bound texture.  They will automatically be used
@@ -491,9 +491,9 @@ GLuint load_dds_file(const std::string imgPath)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP); */
-    /* glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP); */
-    /* glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
     unsigned int offset = 0;
