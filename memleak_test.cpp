@@ -5,7 +5,6 @@
 using namespace std;
 
 vector<GLuint> g_textures;
-vector<GLuint> g_FBOs;
 vector<GLuint> g_compressedTextures;
 
 Display *g_pDisplay = NULL;
@@ -14,7 +13,6 @@ bool     g_bDoubleBuffered = GL_TRUE;
 unsigned int g_width = 1360;
 unsigned int g_height = 768;
 unsigned int g_generateCompressedTexture = 0;
-unsigned int g_useFBO = 0;
 
 #define FORMAT(t, ext) { #t, t, ext }
 static struct format formats[] = {
@@ -41,13 +39,12 @@ void Init(int argc, char *argv[]);
 void Render();
 void InitGL();
 GLuint GenerateTexture(unsigned int width = 600, unsigned int height = 600, bool mipmap = false);
-GLuint GenerateTextureFBO(unsigned int width, unsigned int height, bool mipmap, GLuint *fboOut);
 GLuint GenerateCompressedTexture(unsigned int width = 600, unsigned int height = 600,
                                  GLenum format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, bool mipmap = false);
 GLuint GenerateCompressedTextureFromFile(string filename,
                                          unsigned int width,
                                          unsigned int height);
-void DrawTexture(GLuint texid, GLuint fbo = 0);
+void DrawTexture(GLuint texid);
 
 int main(int argc, char *argv[])
 {
@@ -85,7 +82,7 @@ int main(int argc, char *argv[])
 void Init(int argc, char *argv[])
 {
     unsigned int noOfTextures, noOfCompressedTextures;
-    GLuint texID, fbo;
+    GLuint texID;
 
     InitGL();
 
@@ -99,30 +96,14 @@ void Init(int argc, char *argv[])
         g_generateCompressedTexture = 1;
     }
 
-    gen = getenv("USE_FBO");
-    if (gen && strcmp(gen, "1") == 0)
-    {
-        g_useFBO = 1;
-    }
-
     noOfTextures = atoi(argv[1]);
     noOfCompressedTextures = atoi(argv[2]);
 
     // Create no. of textures.
     for (int i = 0; i < noOfTextures; i++)
     {
-        if (g_useFBO)
-        {
-            texID = GenerateTextureFBO(g_width, g_height, false, &fbo);
-            g_FBOs.push_back(fbo);
-            g_textures.push_back(texID);
-        }
-        else
-        {
-            texID = GenerateTexture(g_width, g_height);
-            g_FBOs.push_back(0);
-            g_textures.push_back(texID);
-        }
+        texID = GenerateTexture(g_width, g_height);
+        g_textures.push_back(texID);
     }
 
     // Create no. of compressed textures.
@@ -292,52 +273,8 @@ GLuint GenerateTexture(unsigned int width, unsigned int height, bool mipmap)
     return texture;
 }
 
-GLuint GenerateTextureFBO(unsigned int width, unsigned int height, bool mipmap, GLuint *fboOut)
+void DrawTexture(GLuint texid)
 {
-    GLuint fbo;
-    GLuint texID;
-    const float color1[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-    const float color2[4] = {0.0f, 1.0f, 0.0f, 1.0f};
-
-    GLfloat *data = piglit_rgbw_image(GL_RGBA, width, height,
-                                      GL_TRUE, GL_UNSIGNED_NORMALIZED);
-
-    // Setup our FBO
-    glGenFramebuffersEXT(1, &fbo);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
-
-    // Now setup a texture to render to
-    glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &texID);
-    glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,  width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // And attach it to the FBO so we can render to it
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texID, 0);
-
-    glTexImage2D(GL_TEXTURE_2D, 0,
-                 GL_RGBA, width, height, 0,
-                 GL_RGBA, GL_FLOAT, data);
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);    // Unbind the FBO for now
-    glDisable(GL_TEXTURE_2D);
-
-    free(data);
-
-    *fboOut = fbo;
-
-    return texID;
-}
-
-void DrawTexture(GLuint texid, GLuint fbo)
-{
-    if (fbo)
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
-
     glEnable(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, texid);
@@ -352,9 +289,6 @@ void DrawTexture(GLuint texid, GLuint fbo)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glDisable(GL_TEXTURE_2D);
-
-    if (fbo)
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void InitGL()
