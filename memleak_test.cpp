@@ -146,24 +146,32 @@ void Render()
 
     if (g_textures.size())
     {
-        n1 = n1 % g_textures.size();
+        int num = random() % g_textures.size();
 
-        DrawTexture(g_textures[n1], g_FBOs[n1]);
-
-        n1++;
+        for (int i = 0; i < num; i++)
+        {
+            int n = random() % g_textures.size();
+            DrawTexture(g_textures[n]);
+            //SaveTextureIntoBmpFile("/tmp/test.bmp", g_textures[0], g_width, g_height);
+        }
     }
 
     if (g_compressedTextures.size())
     {
-        n2 = n2 % g_compressedTextures.size();
-        DrawTexture(g_compressedTextures[n2]);
-        //SaveTextureIntoBmpFile("/tmp/test.bmp", g_compressedTextures[0], g_width, g_height);
-        n2++;
+        int num = random() % g_compressedTextures.size();
+
+        for (int i = 0; i < num; i++)
+        {
+            int n = random() % g_compressedTextures.size();
+            DrawTexture(g_compressedTextures[n]);
+            //SaveTextureIntoBmpFile("/tmp/test.bmp", g_compressedTextures[0], g_width, g_height);
+        }
     }
 
     glXSwapBuffers( g_pDisplay, g_window );
     query_print_video_memory();
-    usleep(16000);
+    
+    //usleep(16000);
 }
 
 GLuint GenerateCompressedTexture(unsigned int width, unsigned int height,
@@ -318,6 +326,8 @@ GLuint GenerateTextureFBO(unsigned int width, unsigned int height, bool mipmap, 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);    // Unbind the FBO for now
     glDisable(GL_TEXTURE_2D);
 
+    free(data);
+
     *fboOut = fbo;
 
     return texID;
@@ -339,6 +349,7 @@ void DrawTexture(GLuint texid, GLuint fbo)
         glTexCoord2f(0.0,1.0) ; glVertex2d(0,g_height);
     }
     glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glDisable(GL_TEXTURE_2D);
 

@@ -53,18 +53,30 @@ void query_print_video_memory()
 #define GPU_MEMORY_INFO_EVICTION_COUNT_NVX            0x904A
 #define GPU_MEMORY_INFO_EVICTED_MEMORY_NVX            0x904B
 
+    static GLint s_vidmem = 0, s_totalmem = 0, s_curr_avail_vidmem = 0, s_evict_cnt = 0, s_evict_mem = 0;
     GLint vidmem = 0, totalmem = 0, curr_avail_vidmem = 0, evict_cnt = 0, evict_mem = 0;
+
     glGetIntegerv(GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &vidmem);
     glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalmem);
     glGetIntegerv(GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &curr_avail_vidmem);
     glGetIntegerv(GPU_MEMORY_INFO_EVICTION_COUNT_NVX, &evict_cnt);
     glGetIntegerv(GPU_MEMORY_INFO_EVICTED_MEMORY_NVX, &evict_mem);
 
-    printf("Total memory available = %d\n", totalmem);
-    printf("Dedicated video memory = %d\n", vidmem);
-    printf("Currently available dedicated video memory = %d\n", curr_avail_vidmem);
-    printf("Total eviction count = %d\n", evict_cnt);
-    printf("Total eviction memory size = %d\n", evict_mem);
+    GLint delta_cnt = abs(evict_cnt - s_evict_cnt);
+    GLint delta_mem = abs(evict_mem - s_evict_mem);
+    if (delta_cnt > 0)
+    {
+        /* printf("Total memory available = %d\n", totalmem); */
+        /* printf("Dedicated video memory = %d\n", vidmem); */
+        /* printf("Currently available dedicated video memory = %d\n", curr_avail_vidmem); */
+        printf("eviction count = %d eviction memory size = %d\n", delta_cnt, delta_mem);
+    }
+
+    s_vidmem            = vidmem;
+    s_totalmem          = totalmem;
+    s_curr_avail_vidmem = curr_avail_vidmem;
+    s_evict_cnt         = evict_cnt;
+    s_evict_mem         = evict_mem;
 }
 
 bool
