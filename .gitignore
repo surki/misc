@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Compiled Object files
 *.slo
 *.lo
@@ -10,3 +11,5 @@
 *.lai
 *.la
 *.a
+memtest
+
