@@ -151,7 +151,7 @@ void Render()
 
     glXSwapBuffers( g_pDisplay, g_window );
     query_print_video_memory();
-    
+
     //usleep(16000);
 }
 

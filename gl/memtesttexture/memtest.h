@@ -348,7 +348,6 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
                 }
         }
 
-
         if (tex == 0) {
                 glGenTextures(1, &tex);
 
@@ -372,8 +371,39 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
                 glBindTexture(GL_TEXTURE_2D, tex);
         }
 
-        glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_FLOAT, tex_data);
+        bool usePBO = false;
+        char *pbo = getenv("USE_PBO");
+        if (pbo && strcmp(pbo, "1") == 0)
+                usePBO = true;
+
+        if (usePBO)
+        {
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))	
+
+                static GLuint ioBuf[1] = { 0 };
+                if (ioBuf[0] == 0)
+                {
+                        glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
+                }
+
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)), 
+                             NULL, GL_STREAM_DRAW);
+
+                void* ioMem = glMapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY);
+                assert(ioMem); 
+                memcpy(ioMem, tex_data, width * height * (4 * sizeof(float)));
+                glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB);
+
+                glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
+                             GL_FLOAT, BUFFER_OFFSET(0));
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        }
+        else
+        {
+                glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
+                             GL_FLOAT, tex_data);
+        }
 
         free(tex_data);
 
