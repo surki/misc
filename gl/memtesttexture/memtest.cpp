@@ -16,6 +16,7 @@ unsigned int g_width = 1360;
 unsigned int g_height = 768;
 unsigned int g_generateCompressedTexture = 0;
 unsigned int g_useFBO = 0;
+unsigned int g_debug = 0;
 
 #define FORMAT(t, ext) { #t, t, ext }
 static struct format formats[] = {
@@ -88,13 +89,13 @@ void Init(int argc, char *argv[])
     unsigned int noOfTextures, noOfCompressedTextures;
     GLuint texID, fbo;
 
-    InitGL();
+    char *gen = getenv("DEBUG");
+    if (gen && strcmp(gen, "1") == 0)
+    {
+        g_debug = 1;
+    }
 
-    query_print_video_memory();
-
-    assert(argc >= 3);
-
-    char *gen = getenv("COMPRESSED_TEXTURE_GENERATE");
+    gen = getenv("COMPRESSED_TEXTURE_GENERATE");
     if (gen && strcmp(gen, "1") == 0)
     {
         g_generateCompressedTexture = 1;
@@ -105,6 +106,12 @@ void Init(int argc, char *argv[])
     {
         g_useFBO = 1;
     }
+    
+    InitGL();
+
+    query_print_video_memory();
+
+    assert(argc >= 3);
 
     noOfTextures = atoi(argv[1]);
     noOfCompressedTextures = atoi(argv[2]);
@@ -384,21 +391,21 @@ void InitGL()
     }
 
     // Find an appropriate visual
-
+    
     int doubleBufferVisual[]  =
-    {
-        GLX_RGBA,           // Needs to support OpenGL
-        GLX_DEPTH_SIZE, 24, // Needs to support a 16 bit depth buffer
-        GLX_DOUBLEBUFFER,   // Needs to support double-buffering
-        None                // end of list
-    };
+        {
+            GLX_RGBA,           // Needs to support OpenGL
+            GLX_DEPTH_SIZE, 24, // Needs to support a 16 bit depth buffer
+            GLX_DOUBLEBUFFER,   // Needs to support double-buffering
+            None                // end of list
+        };
 
     int singleBufferVisual[] =
-    {
-        GLX_RGBA,           // Needs to support OpenGL
-        GLX_DEPTH_SIZE, 16, // Needs to support a 16 bit depth buffer
-        None                // end of list
-    };
+        {
+            GLX_RGBA,           // Needs to support OpenGL
+            GLX_DEPTH_SIZE, 16, // Needs to support a 16 bit depth buffer
+            None                // end of list
+        };
 
     // Try for the double-bufferd visual first
     visualInfo = glXChooseVisual( g_pDisplay, DefaultScreen(g_pDisplay), doubleBufferVisual );
@@ -416,16 +423,37 @@ void InitGL()
 
         g_bDoubleBuffered = false;
     }
+    
+    if (g_debug)
+    {
+        int attrib_list[] = {
+            GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+            None
+        };
 
-    // Create an OpenGL rendering context
-    glxContext = glXCreateContext( g_pDisplay,
-                                   visualInfo,
-                                   NULL,      // No sharing of display lists
-                                   GL_TRUE ); // Direct rendering if possible
+        int nelements = 0;
+        GLXFBConfig *fbc = glXChooseFBConfig(g_pDisplay, DefaultScreen(g_pDisplay), 0, &nelements);
+        assert(nelements);
+
+        // Create an OpenGL rendering context
+        glxContext = glXCreateContextAttribsARB( g_pDisplay,
+                                                 fbc[0],
+                                                 NULL,      // No sharing of display lists
+                                                 GL_TRUE,
+                                                 attrib_list); // Direct rendering if possible
+    }
+    else
+    {
+        // Create an OpenGL rendering context
+        glxContext = glXCreateContext( g_pDisplay,
+                                       visualInfo,
+                                       NULL,      // No sharing of display lists
+                                       GL_TRUE ); // Direct rendering if possible
+    }
 
     if( glxContext == NULL )
     {
-        fprintf(stderr, "glxsimple: %s\n", "could not create rendering context");
+        fprintf(stderr, "%s\n", "could not create rendering context");
         exit(1);
     }
 
@@ -472,6 +500,34 @@ void InitGL()
 
     // Bind the rendering context to the window
     glXMakeCurrent( g_pDisplay, g_window, glxContext );
+
+    if (g_debug)
+    {
+        printf("Debug\n");
+
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+        //glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
+        glDebugMessageCallbackARB(&gl_debug_msg_proc_arb, 0);
+
+        // Possible types
+        // GL_DEBUG_SOURCE_APPLICATION_ARB
+        // GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB
+        // GL_DEBUG_SOURCE_API_ARB
+        // GL_DEBUG_SOURCE_SHADER_COMPILER_ARB
+        // GL_DEBUG_SOURCE_THIRD_PARTY_ARB
+        // GL_DEBUG_SOURCE_APPLICATION_ARB
+        // GL_DEBUG_SOURCE_OTHER_ARB
+        // GL_DEBUG_SOURCE_THIRD_PARTY_ARB
+        // GL_DONT_CARE
+        glDebugMessageControlARB(GL_DONT_CARE, // source
+                                 GL_DONT_CARE, // type
+                                 GL_DONT_CARE, // severity
+                                 0, // count
+                                 NULL, // id
+                                 true // enable or disable
+            );
+    }
 
     // Request the X window to be displayed on the screen
     XMapWindow( g_pDisplay, g_window );

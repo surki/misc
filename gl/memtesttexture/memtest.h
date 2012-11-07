@@ -80,6 +80,45 @@ void query_print_video_memory()
     s_evict_mem         = evict_mem;
 }
 
+void  gl_debug_msg_proc_arb(GLuint source,
+                            GLuint type,
+                            GLuint id,
+                            GLuint severity,
+                            int length,
+                            const char* message,
+                            void* userParam)
+{
+		char debSource[36], debType[38], debSev[29];
+		
+		#define CASE(s, er) case er: strcpy(s, #er); break;
+		switch(source) {
+			CASE(debSource, GL_DEBUG_SOURCE_API_ARB);
+			CASE(debSource, GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB);
+			CASE(debSource, GL_DEBUG_SOURCE_SHADER_COMPILER_ARB);
+			CASE(debSource, GL_DEBUG_SOURCE_THIRD_PARTY_ARB);
+			CASE(debSource, GL_DEBUG_SOURCE_APPLICATION_ARB);
+			CASE(debSource, GL_DEBUG_SOURCE_OTHER_ARB);
+		}
+
+		switch(type) {
+			CASE(debType, GL_DEBUG_TYPE_ERROR_ARB);
+			CASE(debType, GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB);
+			CASE(debType, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB);
+			CASE(debType, GL_DEBUG_TYPE_PORTABILITY_ARB);
+			CASE(debType, GL_DEBUG_TYPE_PERFORMANCE_ARB);
+			CASE(debType, GL_DEBUG_TYPE_OTHER_ARB);
+		}
+
+		switch(severity) {
+			CASE(debSev, GL_DEBUG_SEVERITY_HIGH_ARB);
+			CASE(debSev, GL_DEBUG_SEVERITY_MEDIUM_ARB);
+			CASE(debSev, GL_DEBUG_SEVERITY_LOW_ARB);
+		}
+		#undef CASE
+ 
+		printf("%s, %s, %d, %s, %s\n", debSource, debType, id, debSev, message);
+}
+
 bool
 piglit_get_compressed_block_size(GLenum format,
                                  unsigned *bw, unsigned *bh, unsigned *bytes)
@@ -389,8 +428,11 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
                     glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)), 
                                  NULL, GL_STREAM_DRAW);
                 }
+                else
+                {
+                    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                }
 
-                glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
                 glBufferSubData(GL_PIXEL_UNPACK_BUFFER_ARB, 0, width * height * (4 * sizeof(float)),
                                 tex_data);
 
