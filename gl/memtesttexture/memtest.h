@@ -384,17 +384,20 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
                 static GLuint ioBuf[1] = { 0 };
                 if (ioBuf[0] == 0)
                 {
-                        glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
+                    glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
+                    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)), 
+                                 NULL, GL_STREAM_DRAW);
                 }
 
                 glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
-                glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)), 
-                             NULL, GL_STREAM_DRAW);
+                glBufferSubData(GL_PIXEL_UNPACK_BUFFER_ARB, 0, width * height * (4 * sizeof(float)),
+                                tex_data);
 
-                void* ioMem = glMapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY);
-                assert(ioMem); 
-                memcpy(ioMem, tex_data, width * height * (4 * sizeof(float)));
-                glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB);
+                /* void* ioMem = glMapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY); */
+                /* assert(ioMem);  */
+                /* memcpy(ioMem, tex_data, width * height * (4 * sizeof(float))); */
+                /* glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB); */
 
                 glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
                              GL_FLOAT, BUFFER_OFFSET(0));
