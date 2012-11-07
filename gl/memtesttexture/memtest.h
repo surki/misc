@@ -7,6 +7,7 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <GL/glext.h>
+#include <GL/glxext.h>
 #include <X11/extensions/Xinerama.h>
 
 #include <string>
