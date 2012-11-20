@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <X11/Xlib.h>
-#include <GL/glut.h>
 #include <assert.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -46,6 +47,8 @@ const char *RGTC_signed[] = {
         NULL
 };
 
+extern unsigned int g_usePBO;
+
 void query_print_video_memory()
 {
 #define GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX          0x9047
@@ -88,35 +91,35 @@ void  gl_debug_msg_proc_arb(GLuint source,
                             const char* message,
                             void* userParam)
 {
-		char debSource[36], debType[38], debSev[29];
-		
-		#define CASE(s, er) case er: strcpy(s, #er); break;
-		switch(source) {
-			CASE(debSource, GL_DEBUG_SOURCE_API_ARB);
-			CASE(debSource, GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB);
-			CASE(debSource, GL_DEBUG_SOURCE_SHADER_COMPILER_ARB);
-			CASE(debSource, GL_DEBUG_SOURCE_THIRD_PARTY_ARB);
-			CASE(debSource, GL_DEBUG_SOURCE_APPLICATION_ARB);
-			CASE(debSource, GL_DEBUG_SOURCE_OTHER_ARB);
-		}
+    char debSource[36], debType[38], debSev[29];
 
-		switch(type) {
-			CASE(debType, GL_DEBUG_TYPE_ERROR_ARB);
-			CASE(debType, GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB);
-			CASE(debType, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB);
-			CASE(debType, GL_DEBUG_TYPE_PORTABILITY_ARB);
-			CASE(debType, GL_DEBUG_TYPE_PERFORMANCE_ARB);
-			CASE(debType, GL_DEBUG_TYPE_OTHER_ARB);
-		}
+#define CASE(s, er) case er: strcpy(s, #er); break;
+    switch(source) {
+        CASE(debSource, GL_DEBUG_SOURCE_API_ARB);
+        CASE(debSource, GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB);
+        CASE(debSource, GL_DEBUG_SOURCE_SHADER_COMPILER_ARB);
+        CASE(debSource, GL_DEBUG_SOURCE_THIRD_PARTY_ARB);
+        CASE(debSource, GL_DEBUG_SOURCE_APPLICATION_ARB);
+        CASE(debSource, GL_DEBUG_SOURCE_OTHER_ARB);
+    }
 
-		switch(severity) {
-			CASE(debSev, GL_DEBUG_SEVERITY_HIGH_ARB);
-			CASE(debSev, GL_DEBUG_SEVERITY_MEDIUM_ARB);
-			CASE(debSev, GL_DEBUG_SEVERITY_LOW_ARB);
-		}
-		#undef CASE
- 
-		printf("%s, %s, %d, %s, %s\n", debSource, debType, id, debSev, message);
+    switch(type) {
+        CASE(debType, GL_DEBUG_TYPE_ERROR_ARB);
+        CASE(debType, GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB);
+        CASE(debType, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB);
+        CASE(debType, GL_DEBUG_TYPE_PORTABILITY_ARB);
+        CASE(debType, GL_DEBUG_TYPE_PERFORMANCE_ARB);
+        CASE(debType, GL_DEBUG_TYPE_OTHER_ARB);
+    }
+
+    switch(severity) {
+        CASE(debSev, GL_DEBUG_SEVERITY_HIGH_ARB);
+        CASE(debSev, GL_DEBUG_SEVERITY_MEDIUM_ARB);
+        CASE(debSev, GL_DEBUG_SEVERITY_LOW_ARB);
+    }
+#undef CASE
+
+    printf("%s, %s, %d, %s, %s\n", debSource, debType, id, debSev, message);
 }
 
 bool
@@ -160,6 +163,13 @@ piglit_get_compressed_block_size(GLenum format,
                 *bw = *bh = *bytes = 1;
                 return false;
         }
+}
+
+double get_time_now()
+{
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    return ((double)now.tv_sec + ((double)now.tv_usec) * 0.000001);
 }
 
 /**
@@ -411,21 +421,16 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
                 glBindTexture(GL_TEXTURE_2D, tex);
         }
 
-        bool usePBO = false;
-        char *pbo = getenv("USE_PBO");
-        if (pbo && strcmp(pbo, "1") == 0)
-                usePBO = true;
-
-        if (usePBO)
+        if (g_usePBO)
         {
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))	
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
                 static GLuint ioBuf[1] = { 0 };
                 if (ioBuf[0] == 0)
                 {
                     glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
                     glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
-                    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)), 
+                    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, width * height * (4 * sizeof(float)),
                                  NULL, GL_STREAM_DRAW);
                 }
                 else
@@ -590,10 +595,6 @@ GLuint load_dds_file(const std::string imgPath)
 
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
 
     // Set the appropriate texture parameters.  These parameters are saved
     // with the currently bound texture.  They will automatically be used
@@ -601,22 +602,53 @@ GLuint load_dds_file(const std::string imgPath)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
     unsigned int offset = 0;
+
+    // For now we just care about one mipmap
+    ddSurfaceInfo.dwMipMapCount = 0;
 
     /* load the mipmaps */
     for (unsigned int level = 0; level <= ddSurfaceInfo.dwMipMapCount &&
              (ddSurfaceInfo.dwWidth || ddSurfaceInfo.dwHeight); ++level)
     {
         unsigned int size = ((ddSurfaceInfo.dwWidth+3)/4)*((ddSurfaceInfo.dwHeight+3)/4)*blockSize;
-        // printf("width = %d height = %d mipMapCount=%d size=%d\n",
-        //        g_width, g_height, mipMapCount, size);
-        glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
-                               0, size, buffer + offset);
+        /* printf("width = %d height = %d mipMapCount=%d size=%d\n", */
+        /*        ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight, ddSurfaceInfo.dwMipMapCount, size); */
+
+        if (g_usePBO)
+        {
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
+                static GLuint ioBuf[1] = { 0 };
+                if (ioBuf[0] == 0)
+                {
+                    glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
+                    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, size, NULL, GL_STREAM_DRAW);
+                }
+                else
+                {
+                    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                }
+
+                glBufferSubData(GL_PIXEL_UNPACK_BUFFER_ARB, 0, size,
+                                buffer + offset);
+
+                /* void* ioMem = glMapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY); */
+                /* assert(ioMem); */
+                /* memcpy(ioMem, buffer + offset, size); */
+                /* glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB); */
+
+                glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
+                                       0, size, BUFFER_OFFSET(0));
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        }
+        else
+        {
+            glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
+                                   0, size, buffer + offset);
+        }
 
         offset += size;
         ddSurfaceInfo.dwWidth  /= 2;

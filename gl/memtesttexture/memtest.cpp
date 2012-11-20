@@ -16,6 +16,7 @@ unsigned int g_width = 1360;
 unsigned int g_height = 768;
 unsigned int g_generateCompressedTexture = 0;
 unsigned int g_useFBO = 0;
+unsigned int g_usePBO = 0;
 unsigned int g_debug = 0;
 
 #define FORMAT(t, ext) { #t, t, ext }
@@ -53,13 +54,23 @@ void DrawTexture(GLuint texid, GLuint fbo = 0);
 
 int main(int argc, char *argv[])
 {
+    double fpsTotalTime = 0.0 ,fpsStartTime = 0.0;
+    double frameStart, frameEnd, frameDuration;
+    unsigned long fps = 0;
     XEvent event;
 
     if (argc < 2)
     {
         printf("Usage: %s N1 N2\n"
                "\t N1 = no. of textures \n"
-               "\t N2 = no. of compressed textures\n",
+               "\t N2 = no. of compressed textures\n"
+               "\n"
+               "Environment variables\n\n"
+               "  USE_FBO=1 Use frame buffer objects while uploading/rendering textures\n\n"
+               "  USE_PBO=1 Use pixel buffer objects while uploading textures\n\n"
+               "  DEBUG=1   Enable OpenGL debugging information via GL_ARB_debug_output\n\n"
+               "  COMPRESSED_TEXTURE_GENERATE=1 Generate compressed textures on the fly\n"
+               "                                Instead of loading from file\n\n",
                argv[0]);
         exit(1);
     }
@@ -80,7 +91,29 @@ int main(int argc, char *argv[])
             }
         }
 
+        frameStart = get_time_now();
+		if (!fpsStartTime)
+			fpsStartTime = frameStart;
+
         Render();
+
+        frameEnd = get_time_now();
+        frameDuration = max(frameEnd - frameStart, 0.0);
+        fpsTotalTime += frameDuration;
+        fps++;
+
+		if (g_debug)
+        {
+			printf("FrameDuration=%f\n", frameDuration);
+        }
+        
+        if ((frameEnd - fpsStartTime) >= 1.0)
+        {
+            printf("FPS = %f\n", (double)fps/(frameEnd - fpsStartTime));
+            fps = 0;
+            fpsTotalTime = 0.0;
+			fpsStartTime = 0.0;
+        }
     }
 }
 
@@ -106,7 +139,11 @@ void Init(int argc, char *argv[])
     {
         g_useFBO = 1;
     }
-    
+
+    gen = getenv("USE_PBO");
+    if (gen && strcmp(gen, "1") == 0)
+        g_usePBO = 1;
+
     InitGL();
 
     query_print_video_memory();
@@ -147,19 +184,22 @@ void Init(int argc, char *argv[])
 
 void Render()
 {
-    static unsigned int n1 = 0, n2 = 0;
-
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (g_textures.size())
     {
         int num = random() % g_textures.size();
-
+		int fbo = 0;
         for (int i = 0; i <= num; i++)
         {
             int n = random() % g_textures.size();
-            DrawTexture(g_textures[n]);
+            if (g_useFBO)
+                fbo = g_FBOs[n];
+            else
+                fbo = 0;
+
+            DrawTexture(g_textures[n], fbo);
             //SaveTextureIntoBmpFile("/tmp/test.bmp", g_textures[0], g_width, g_height);
         }
     }
@@ -243,9 +283,39 @@ GLuint GenerateCompressedTexture(unsigned int width, unsigned int height,
                 glGetCompressedTexImage(GL_TEXTURE_2D, level, compressed);
 
                 glBindTexture(GL_TEXTURE_2D, tex);
-                glCompressedTexImage2D(GL_TEXTURE_2D, level, format,
-                                       w, h, 0, size, compressed);
-                assert(glGetError() == GL_NO_ERROR);
+
+                if (g_usePBO)
+                {
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+                    static GLuint ioBuf[1] = { 0 };
+                    if (ioBuf[0] == 0)
+                    {
+                        glGenBuffers(sizeof(ioBuf)/sizeof(GLuint), ioBuf);
+                        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                        glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, size, NULL, GL_STREAM_DRAW);
+                    }
+                    else
+                    {
+                        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, ioBuf[0]);
+                    }
+
+                    glBufferSubData(GL_PIXEL_UNPACK_BUFFER_ARB, 0, size, compressed);
+
+                    // void* ioMem = glMapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY);
+                    // assert(ioMem);
+                    // memcpy(ioMem, compressed, size);
+                    // glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB);
+
+                    glCompressedTexImage2D(GL_TEXTURE_2D, level, format, w, h,
+                                           0, size, BUFFER_OFFSET(0));
+                    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+                }
+                else
+                {
+                    glCompressedTexImage2D(GL_TEXTURE_2D, level, format,
+                                           w, h, 0, size, compressed);
+                    assert(glGetError() == GL_NO_ERROR);
+                }
 
                 {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -391,7 +461,7 @@ void InitGL()
     }
 
     // Find an appropriate visual
-    
+
     int doubleBufferVisual[]  =
         {
             GLX_RGBA,           // Needs to support OpenGL
@@ -423,7 +493,7 @@ void InitGL()
 
         g_bDoubleBuffered = false;
     }
-    
+
     if (g_debug)
     {
         int attrib_list[] = {
@@ -503,7 +573,7 @@ void InitGL()
 
     if (g_debug)
     {
-        printf("Debug\n");
+        printf("GL debugging enabled\n");
 
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
