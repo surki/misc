@@ -14,6 +14,7 @@ Window   g_window;
 bool     g_bDoubleBuffered = GL_TRUE;
 unsigned int g_width = 1360;
 unsigned int g_height = 768;
+
 unsigned int g_generateCompressedTexture = 0;
 unsigned int g_useFBO = 0;
 unsigned int g_usePBO = 0;
@@ -76,6 +77,9 @@ int main(int argc, char *argv[])
     }
 
     Init(argc, argv);
+
+    printf("Going to render, press enter to continue\n");
+    getchar();
 
     while (1)
     {
@@ -308,12 +312,14 @@ GLuint GenerateCompressedTexture(unsigned int width, unsigned int height,
 
                     glCompressedTexImage2D(GL_TEXTURE_2D, level, format, w, h,
                                            0, size, BUFFER_OFFSET(0));
+                    assert(glGetError() == GL_NO_ERROR);
                     glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
                 }
                 else
                 {
                     glCompressedTexImage2D(GL_TEXTURE_2D, level, format,
                                            w, h, 0, size, compressed);
+                    assert(glGetError() == GL_NO_ERROR);
                     assert(glGetError() == GL_NO_ERROR);
                 }
 
@@ -400,7 +406,7 @@ GLuint GenerateTextureFBO(unsigned int width, unsigned int height, bool mipmap, 
     glTexImage2D(GL_TEXTURE_2D, 0,
                  GL_RGBA, width, height, 0,
                  GL_RGBA, GL_FLOAT, data);
-
+    assert(glGetError() == GL_NO_ERROR);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);    // Unbind the FBO for now
     glDisable(GL_TEXTURE_2D);
 

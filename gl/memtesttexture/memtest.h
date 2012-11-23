@@ -312,7 +312,7 @@ piglit_rgbw_texture(GLenum internalFormat, int w, int h, GLboolean mip,
                              internalFormat,
                              w, h, 0,
                              GL_RGBA, GL_FLOAT, data);
-
+                assert(glGetError() == GL_NO_ERROR);
                 free(data);
 
                 if (!mip)
@@ -448,12 +448,14 @@ piglit_checkerboard_texture(GLuint tex, unsigned level,
 
                 glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
                              GL_FLOAT, BUFFER_OFFSET(0));
+                assert(glGetError() == GL_NO_ERROR);
                 glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
         }
         else
         {
                 glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
                              GL_FLOAT, tex_data);
+                assert(glGetError() == GL_NO_ERROR);
         }
 
         free(tex_data);
@@ -642,12 +644,14 @@ GLuint load_dds_file(const std::string imgPath)
 
                 glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
                                        0, size, BUFFER_OFFSET(0));
+                assert(glGetError() == GL_NO_ERROR);
                 glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
         }
         else
         {
             glCompressedTexImage2D(GL_TEXTURE_2D, level, format, ddSurfaceInfo.dwWidth, ddSurfaceInfo.dwHeight,
                                    0, size, buffer + offset);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         offset += size;
