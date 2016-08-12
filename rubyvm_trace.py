@@ -1,37 +1,26 @@
-#!/usr/bin/python
+#!/usr/bin/python -u
 
 # Utility to trace various Ruby VM events using BCC/eBPF.
 #
-# For now, it can display GC mark phase latency and summarize objects
-# created by their type
+# For now, it can display GC mark phase latency, method cache hit/miss rate
+# and summarize objects created by their type
 
 from __future__ import print_function
-from bcc import BPF, USDTReader
+from bcc import BPF, USDT
 from time import strftime
 import ctypes as ct
 import argparse
 import sys
 from time import sleep
 
-args = None
-TASK_COMM_LEN = 16    # linux/sched.h
-
-gc_mark_begin_probe = None
-gc_mark_end_probe = None
-gc_sweep_begin_probe = None
-gc_sweep_end_probe = None
-
-class Data(ct.Structure):
-    _fields_ = [
-        ("pid", ct.c_ulonglong),
-        ("ts", ct.c_ulonglong),
-        ("delta", ct.c_ulonglong),
-        ("comm", ct.c_char * TASK_COMM_LEN)
-    ]
-
 def parse_args():
     global args
     examples = """examples:
+
+    rubyvm_trace --trace-gc --pid=1234                # trace GC timings for pid 1234
+    rubyvm_trace --trace-object-creation --pid=1234   # trace object creations for pid 1234
+    rubyvm_trace --trace-method-cache --pid=1234      # trace method cache hit/miss rate for pid 1234
+    rubyvm_trace --trace-method-cache                 # trace method cache hit/miss rate for all ruby processes
     """
 
     parser = argparse.ArgumentParser(
@@ -42,33 +31,29 @@ def parse_args():
                         help="trace this PID only")
     parser.add_argument("-g", "--trace-gc", dest='tracegc', action='store_true',
                         help="trace GC operations")
-    parser.add_argument("-o", "--trace-objcreation", dest='traceobjcreation', action='store_true',
+    parser.add_argument("-o", "--trace-object-creation", dest='traceobjectcreation', action='store_true',
                         help="trace object creations")
-    parser.set_defaults(tracegc=True)
+    parser.add_argument("-m", "--trace-method-cache", dest='tracemethodcache', action='store_true',
+                        help="trace method cache usage")
+
+    if len(sys.argv[1:])==0:
+        parser.print_help()
+        parser.exit()
+
     args = parser.parse_args()
 
-def create_gc_probes():
-    global b
-    global gc_mark_begin_probe
-    global gc_mark_end_probe
-    global gc_sweep_begin_probe
-    global gc_sweep_end_probe
+args = None
+TASK_COMM_LEN = 16    # linux/sched.h
 
-    reader = USDTReader(pid=args.pid)
+class Data(ct.Structure):
+    _fields_ = [
+        ("pid", ct.c_ulonglong),
+        ("ts", ct.c_ulonglong),
+        ("delta", ct.c_ulonglong),
+        ("comm", ct.c_char * TASK_COMM_LEN)
+    ]
 
-    for probe in reader.probes:
-        if probe.name == "gc__mark__begin":
-            gc_mark_begin_probe = probe
-        elif probe.name == "gc__mark__end":
-            gc_mark_end_probe = probe
-        elif probe.name == "gc__sweep__begin":
-            gc_sweep_begin_probe = probe
-        elif probe.name == "gc__sweep__end":
-            gc_sweep_end_probe = probe
-
-    if None in (gc_mark_begin_probe, gc_mark_end_probe, gc_sweep_begin_probe, gc_sweep_end_probe):
-        raise ValueError("Probes not found, is dtrace enabled in the ruby?")
-
+def do_gc_probes():
     # load BPF program
     bpf_text = """
     #include <uapi/linux/ptrace.h>
@@ -128,41 +113,33 @@ def create_gc_probes():
         return 0;
     }
     """
-    b = BPF(text=bpf_text)
 
-    if gc_mark_begin_probe.need_enable():
-        gc_mark_begin_probe.enable(args.pid)
+    u = USDT(pid=args.pid)
+    u.enable_probe(probe="gc__mark__begin", fn_name="do_entry")
+    u.enable_probe(probe="gc__mark__end", fn_name="do_return")
 
-    if gc_mark_end_probe.need_enable():
-        gc_mark_end_probe.enable(args.pid)
+    b = BPF(text=bpf_text ,usdt=u)
+    # b.attach_uprobe(name="ruby", sym="gc_start_internal", fn_name="do_entry", pid=args.pid)
+    # b.attach_uretprobe(name="ruby", sym="gc_start_internal", fn_name="do_return", pid=args.pid)
 
-    if gc_sweep_begin_probe.need_enable():
-        gc_sweep_begin_probe.enable(args.pid)
+    print("%-9s %-6s %-16s %10s" % ("TIME", "PID", "COMM", "LATms"))
+    b["events"].open_perf_buffer(print_gc_event)
 
-    if gc_sweep_end_probe.need_enable():
-        gc_sweep_end_probe.enable(args.pid)
+    try:
+        while 1:
+            b.kprobe_poll()
+    except:
+        pass
 
-    b.attach_uprobe(name=gc_mark_begin_probe.bin_path, addr=gc_mark_begin_probe.locations[0].address, fn_name="do_entry", pid=args.pid)
-    b.attach_uprobe(name=gc_mark_end_probe.bin_path, addr=gc_mark_end_probe.locations[0].address, fn_name="do_return", pid=args.pid)
+    # b.detach_uprobe(name="ruby", sym="gc_start_internal")
+    # b.detach_uprobe(name="ruby", sym="gc_start_internal")
 
-    # b.attach_uprobe(name="ruby", sym="garbage_collect", fn_name="do_entry", pid=args.pid)
-    # b.attach_uretprobe(name="ruby", sym="garbage_collect", fn_name="do_return", pid=args.pid)
-    # b.attach_uprobe(name=gc_sweep_begin_probe.bin_path, addr=gc_sweep_begin_probe.locations[0].address, fn_name="do_entry", pid=args.pid)
-    # b.attach_uprobe(name=gc_sweep_end_probe.bin_path, addr=gc_sweep_end_probe.locations[0].address, fn_name="do_return", pid=args.pid)
+def print_gc_event(cpu, data, size):
+    event = ct.cast(data, ct.POINTER(Data)).contents
+    print("%-9s %-6d %-16s %10.2f" % (strftime("%H:%M:%S"), event.pid,
+                                      event.comm.decode(), (event.delta / 1000000)))
 
-def create_object_creation_probes():
-    global b
-    global gc_object_create_probe
-
-    reader = USDTReader(pid=args.pid)
-
-    for probe in reader.probes:
-        if probe.name == "object__create":
-            gc_object_create_probe = probe
-
-    if gc_object_create_probe is None:
-        raise ValueError("Probes not found, is dtrace enabled in the ruby?")
-
+def do_object_creation_probes():
     # load BPF program
     bpf_text = """
     #include <uapi/linux/ptrace.h>
@@ -182,53 +159,105 @@ def create_object_creation_probes():
         return 0;
     }
     """
-    b = BPF(text=bpf_text)
 
-    if gc_object_create_probe.need_enable():
-        gc_object_create_probe.enable(args.pid)
+    u = USDT(pid=args.pid)
+    u.enable_probe(probe="object__create", fn_name="do_count")
 
-    b.attach_uprobe(name=gc_object_create_probe.bin_path, addr=gc_object_create_probe.locations[0].address, fn_name="do_count", pid=args.pid)
-    
-def print_gc_event(cpu, data, size):
-    event = ct.cast(data, ct.POINTER(Data)).contents
-    print("%-9s %-6d %-16s %10.2f" % (strftime("%H:%M:%S"), event.pid,
-                                      event.comm.decode(), (event.delta / 1000000)))
+    b = BPF(text=bpf_text, usdt=u)
 
-def objcreation_event_loop():
     print("Press Ctrl-C to display/exit")
-    while True:
-        try:
-            sleep(100)
-        except KeyboardInterrupt:
-            data = b.get_table("objmap")
-            data = sorted(data.items(), key=lambda kv: kv[1].value)
-            for key, value in data:
-                # Print some nice values if the user didn't
-                # specify an expression to probe
-                print("\t%-10s %s" % \
-                      (str(value.value), str(key.objectname.decode())))
-            exit()
-    gc_object_create_probe.disable(args.pid)
-    
-def gc_event_loop():
-    print("%-9s %-6s %-16s %10s" % ("TIME", "PID", "COMM", "LATms"))
-    b["events"].open_perf_buffer(print_gc_event)
     try:
-        while 1:
-            b.kprobe_poll()
-    except:
+        sleep(99999999)
+    except KeyboardInterrupt:
         pass
 
-    gc_mark_begin_probe.disable(args.pid)
-    gc_mark_end_probe.disable(args.pid)
-    gc_sweep_begin_probe.disable(args.pid)
-    gc_sweep_end_probe.disable(args.pid)
+    data = b.get_table("objmap")
+    data = sorted(data.items(), key=lambda kv: kv[1].value)
+    for key, value in data:
+        print("\t%-10s %s" % \
+              (str(value.value), str(key.objectname.decode())))
+
+class Data(ct.Structure):
+    _fields_ = [
+        ("pid", ct.c_ulonglong),
+        ("ts", ct.c_ulonglong),
+        ("delta", ct.c_ulonglong),
+        ("comm", ct.c_char * TASK_COMM_LEN)
+    ]
+    
+def do_method_cache_probes():
+    # load BPF program
+    bpf_text = """
+    #include <uapi/linux/ptrace.h>
+    #include <linux/sched.h>
+
+    struct key_t {
+        u32 pid;
+    };
+
+    struct val_t {
+        u32 pid;
+        u64 method_get;
+        u64 method_get_without_cache;
+    };
+
+    BPF_HASH(methodstat, struct key_t, struct val_t);
+
+    int method_get_entry(struct pt_regs *ctx) {
+        struct key_t key = {};
+        struct val_t val = {};
+        struct val_t *valp;
+        u32 pid;
+
+        key.pid = bpf_get_current_pid_tgid();
+        valp = methodstat.lookup_or_init(&key, &val);
+        valp->method_get++;
+
+        return 0;
+    }
+
+    int method_get_entry_without_cache(struct pt_regs *ctx) {
+        struct key_t key = {};
+        struct val_t val = {};
+        struct val_t *valp;
+        u32 pid;
+
+        key.pid = bpf_get_current_pid_tgid();
+        valp = methodstat.lookup_or_init(&key, &val);
+        valp->method_get_without_cache++;
+
+        return 0;
+    }
+    """
+
+    b = BPF(text=bpf_text)
+
+    b.attach_uprobe(name="ruby", sym="rb_method_entry", fn_name="method_get_entry", pid=args.pid)
+    b.attach_uprobe(name="ruby", sym="rb_method_entry_get_without_cache", fn_name="method_get_entry_without_cache", pid=args.pid)
+
+    print("Press Ctrl-C to display/exit")
+    try:
+        sleep(99999999)
+    except KeyboardInterrupt:
+        pass
+
+    data = b.get_table("methodstat")
+    print("Total items = %d" % len(data.items()))
+    print("\n%-6s %-15s %-15s %-15s" % ("PID", "METHOD HIT", "METHOD MISS", "HIT RATE"))
+    for key, value in data.items():
+        method_hit = value.method_get - value.method_get_without_cache
+        method_miss = value.method_get_without_cache
+        hit_rate = (float(method_hit) / float(method_hit + method_miss)) * 100
+        print("%-6d %-15d %-15d %-15.2f" % (key.pid, method_hit, method_miss, hit_rate))
+
+    b.detach_uprobe(name="ruby", sym="rb_method_entry")
+    b.detach_uprobe(name="ruby", sym="rb_method_entry_get_without_cache")
 
 parse_args()
 
-if args.traceobjcreation:
-    create_object_creation_probes()
-    objcreation_event_loop()
+if args.traceobjectcreation:
+    do_object_creation_probes()
+elif args.tracemethodcache:
+    do_method_cache_probes()
 elif args.tracegc:
-    create_gc_probes()
-    gc_event_loop()
+    do_gc_probes()
