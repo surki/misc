@@ -177,14 +177,6 @@ def do_object_creation_probes():
         print("\t%-10s %s" % \
               (str(value.value), str(key.objectname.decode())))
 
-class Data(ct.Structure):
-    _fields_ = [
-        ("pid", ct.c_ulonglong),
-        ("ts", ct.c_ulonglong),
-        ("delta", ct.c_ulonglong),
-        ("comm", ct.c_char * TASK_COMM_LEN)
-    ]
-    
 def do_method_cache_probes():
     # load BPF program
     bpf_text = """
@@ -242,7 +234,6 @@ def do_method_cache_probes():
         pass
 
     data = b.get_table("methodstat")
-    print("Total items = %d" % len(data.items()))
     print("\n%-6s %-15s %-15s %-15s" % ("PID", "METHOD HIT", "METHOD MISS", "HIT RATE"))
     for key, value in data.items():
         method_hit = value.method_get - value.method_get_without_cache
