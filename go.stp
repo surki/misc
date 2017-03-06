@@ -1,0 +1,63 @@
+#! /usr/bin/env stap
+
+global stats, starttime
+
+// Get the Go id of the goroutine.
+//
+// Go id is stored in 'runtime.g' struct's 'goid' member. The 'g' for
+// current goroutine is in TLS (pointed to by 'fs' segment register). Hard
+// coding 'goid' offset to 0xC0 (tested on go1.8). Probably should use @cast
+// 
+function get_goid:long ()
+%{ /* pure */ 
+    char *g = NULL;
+    long goid = 0;
+
+    asm volatile ("mov %%fs:0xfffffffffffffff8, %0" :  "=r" (g));
+    if (g)
+        goid = *(long *)(g + 0xc0);
+
+    STAP_RETVALUE = goid;
+    %}
+
+probe begin {
+    printf("Collecting data - type Ctrl-C to print output and exit...\n")
+}
+
+probe process(@1).function(@2) {
+    //starttime[probefunc(), get_goid()] = gettimeofday_ns()
+    printf("Called %s for goid %lu\n", probefunc(), get_goid())
+}
+
+// Unfortunately this doesn't seem to work (tested on kernel 4.9.11).  The
+// return probe modifies the stack, which seems to confuse the go runtime
+// (copystack, shrinkstack, morestack, gc stack scanning etc).
+// Will using gccgo help?
+//
+// https://sourceware.org/bugzilla/show_bug.cgi?id=12275
+//
+// Typical error:
+// runtime: unexpected return pc for main.(*HttpClientWithTrace).Do called from 0x7fffffffe000
+// fatal error: unknown caller pc
+//
+// runtime stack:
+// runtime.throw(0xa47f1b, 0x11)
+//         /home/suresh/src/go/src/runtime/panic.go:596 +0x95
+// runtime.gentraceback(0xffffffffffffffff, 0xc4200e4340, 0x0, 0xc4200ed6c0, 0x0, 0x0, 0x7fffffff, 0xa691c8, 0x7ffe51090b78, 0x0, ...)
+//         /home/suresh/src/go/src/runtime/traceback.go:317 +0x13ea
+// runtime.copystack(0xc4200ed6c0, 0x4000, 0x7f404cb8e001)
+//         /home/suresh/src/go/src/runtime/stack.go:932 +0x370
+// runtime.newstack(0x0)
+//         /home/suresh/src/go/src/runtime/stack.go:1098 +0x348
+// runtime.morestack()
+//         /home/suresh/src/go/src/runtime/asm_amd64.s:398 +0x86
+//
+//
+// probe process(@1).function(@2).return {
+//     stats <<< gettimeofday_ns() - @entry(gettimeofday_ns())
+// }
+
+probe end {
+    printf("max/avg/min: %d/%d/%d\n", @max(stats), @avg(stats), @min(stats))
+    print(@hist_log(stats))
+}
