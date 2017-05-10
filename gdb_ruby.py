@@ -415,7 +415,7 @@ def print_global_variables():
     rb_global_tbl = gdb.parse_and_eval('rb_global_tbl')
     st_foreach(rb_global_tbl, try_print_variable)
 
-def get_ruby_localvariables(th=None):
+def get_ruby_localvariables(th=None, varname=None):
   if th == None:
     th = gdb.parse_and_eval('ruby_current_thread')
   else:
@@ -437,6 +437,9 @@ def get_ruby_localvariables(th=None):
         for j in range(0, int(local_table_size)):
             id = cfp['iseq']['local_table'][j]
             l = _rb_id2str(id)
+            if varname is not None and varname != get_rstring(l):
+                continue
+
             if l is not None:
                 sys.stdout.write("%s = " % get_rstring(l))
                 v = cfp['ep'] - (local_table_size - j - 1 + 2)
@@ -446,6 +449,9 @@ def get_ruby_localvariables(th=None):
     cfp -= 1
 
 def get_rstring(addr):
+  if addr is None:
+    return None
+
   s = addr.cast(RString_t.pointer())
   if s['basic']['flags'] & (1 << 13):
     return s['as']['heap']['ptr'].string()
@@ -571,13 +577,17 @@ class RubyStackTraceCmd(gdb.Command):
         get_ruby_stacktrace(folded=folded)
 
 class RubyLocalVariablesCmd(gdb.Command):
-    "Print Ruby local variables, by walking stack"
+    "Print Ruby local variables, by walking stack. Pass variable name to filter"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_locals", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
 
     def invoke(self, arg, _from_tty):
-        get_ruby_localvariables()
+        argv = gdb.string_to_argv(arg)
+        varname = None
+        if len(argv) > 0:
+            varname = argv[0]
+        get_ruby_localvariables(varname=varname)
 
 class RubyGlovalVariablesCmd(gdb.Command):
     "Print Ruby global variables"
