@@ -18,30 +18,53 @@ ID_ENTRY_SYM = gdb.parse_and_eval('ID_ENTRY_SYM')
 ID_ENTRY_SIZE = gdb.parse_and_eval('ID_ENTRY_SIZE')
 ID_ENTRY_UNIT = gdb.parse_and_eval('ID_ENTRY_UNIT')
 
-RUBY_FL_USHIFT = gdb.parse_and_eval('RUBY_FL_USHIFT')
+RUBY_FL_USHIFT = 12
 
-RUBY_FL_USER0  = gdb.parse_and_eval('RUBY_FL_USER0')
-RUBY_FL_USER1  = gdb.parse_and_eval('RUBY_FL_USER1')
-RUBY_FL_USER2  = gdb.parse_and_eval('RUBY_FL_USER2')
-RUBY_FL_USER3  = gdb.parse_and_eval('RUBY_FL_USER3')
-RUBY_FL_USER4  = gdb.parse_and_eval('RUBY_FL_USER4')
-RUBY_FL_USER5  = gdb.parse_and_eval('RUBY_FL_USER5')
-RUBY_FL_USER6  = gdb.parse_and_eval('RUBY_FL_USER6')
-RUBY_FL_USER7  = gdb.parse_and_eval('RUBY_FL_USER7')
-RUBY_FL_USER8  = gdb.parse_and_eval('RUBY_FL_USER8')
-RUBY_FL_USER9  = gdb.parse_and_eval('RUBY_FL_USER9')
-RUBY_FL_USER10 = gdb.parse_and_eval('RUBY_FL_USER10')
-RUBY_FL_USER11 = gdb.parse_and_eval('RUBY_FL_USER11')
-RUBY_FL_USER12 = gdb.parse_and_eval('RUBY_FL_USER12')
-RUBY_FL_USER13 = gdb.parse_and_eval('RUBY_FL_USER13')
-RUBY_FL_USER14 = gdb.parse_and_eval('RUBY_FL_USER14')
-RUBY_FL_USER15 = gdb.parse_and_eval('RUBY_FL_USER15')
-RUBY_FL_USER16 = gdb.parse_and_eval('RUBY_FL_USER16')
-RUBY_FL_USER17 = gdb.parse_and_eval('RUBY_FL_USER17')
-RUBY_FL_USER18 = gdb.parse_and_eval('RUBY_FL_USER18')
-RUBY_FL_USER19 = gdb.parse_and_eval('RUBY_FL_USER19')
+RUBY_FL_USER0 = (1<<RUBY_FL_USHIFT+0)
+RUBY_FL_USER1 = (1<<RUBY_FL_USHIFT+1)
+RUBY_FL_USER2 = (1<<RUBY_FL_USHIFT+2)
+RUBY_FL_USER3 = (1<<RUBY_FL_USHIFT+3)
+RUBY_FL_USER4 = (1<<RUBY_FL_USHIFT+4)
+RUBY_FL_USER5 = (1<<RUBY_FL_USHIFT+5)
+RUBY_FL_USER6 = (1<<RUBY_FL_USHIFT+6)
+RUBY_FL_USER7 = (1<<RUBY_FL_USHIFT+7)
+RUBY_FL_USER8 = (1<<RUBY_FL_USHIFT+8)
+RUBY_FL_USER9 = (1<<RUBY_FL_USHIFT+9)
+RUBY_FL_USER10 = (1<<RUBY_FL_USHIFT+10)
+RUBY_FL_USER11 = (1<<RUBY_FL_USHIFT+11)
+RUBY_FL_USER12 = (1<<RUBY_FL_USHIFT+12)
+RUBY_FL_USER13 = (1<<RUBY_FL_USHIFT+13)
+RUBY_FL_USER14 = (1<<RUBY_FL_USHIFT+14)
+RUBY_FL_USER15 = (1<<RUBY_FL_USHIFT+15)
+RUBY_FL_USER16 = (1<<RUBY_FL_USHIFT+16)
+RUBY_FL_USER17 = (1<<RUBY_FL_USHIFT+17)
+RUBY_FL_USER18 = (1<<RUBY_FL_USHIFT+18)
+RUBY_FL_USER19 = (1<<RUBY_FL_USHIFT+19)
 
-RUBY_FL_SINGLETON = gdb.parse_and_eval('RUBY_FL_SINGLETON')
+#RUBY_FL_USHIFT = gdb.parse_and_eval('RUBY_FL_USHIFT')
+
+# RUBY_FL_USER0  = gdb.parse_and_eval('RUBY_FL_USER0')
+# RUBY_FL_USER1  = gdb.parse_and_eval('RUBY_FL_USER1')
+# RUBY_FL_USER2  = gdb.parse_and_eval('RUBY_FL_USER2')
+# RUBY_FL_USER3  = gdb.parse_and_eval('RUBY_FL_USER3')
+# RUBY_FL_USER4  = gdb.parse_and_eval('RUBY_FL_USER4')
+# RUBY_FL_USER5  = gdb.parse_and_eval('RUBY_FL_USER5')
+# RUBY_FL_USER6  = gdb.parse_and_eval('RUBY_FL_USER6')
+# RUBY_FL_USER7  = gdb.parse_and_eval('RUBY_FL_USER7')
+# RUBY_FL_USER8  = gdb.parse_and_eval('RUBY_FL_USER8')
+# RUBY_FL_USER9  = gdb.parse_and_eval('RUBY_FL_USER9')
+# RUBY_FL_USER10 = gdb.parse_and_eval('RUBY_FL_USER10')
+# RUBY_FL_USER11 = gdb.parse_and_eval('RUBY_FL_USER11')
+# RUBY_FL_USER12 = gdb.parse_and_eval('RUBY_FL_USER12')
+# RUBY_FL_USER13 = gdb.parse_and_eval('RUBY_FL_USER13')
+# RUBY_FL_USER14 = gdb.parse_and_eval('RUBY_FL_USER14')
+# RUBY_FL_USER15 = gdb.parse_and_eval('RUBY_FL_USER15')
+# RUBY_FL_USER16 = gdb.parse_and_eval('RUBY_FL_USER16')
+# RUBY_FL_USER17 = gdb.parse_and_eval('RUBY_FL_USER17')
+# RUBY_FL_USER18 = gdb.parse_and_eval('RUBY_FL_USER18')
+# RUBY_FL_USER19 = gdb.parse_and_eval('RUBY_FL_USER19')
+
+# RUBY_FL_SINGLETON = gdb.parse_and_eval('RUBY_FL_SINGLETON')
 
 RARRAY_EMBED_FLAG = RUBY_FL_USER1
 RARRAY_EMBED_LEN_SHIFT = RUBY_FL_USHIFT+3
@@ -443,8 +466,12 @@ def get_ruby_localvariables(th=None, varname=None):
             if l is not None:
                 sys.stdout.write("%s = " % get_rstring(l))
                 v = cfp['ep'] - (local_table_size - j - 1 + 2)
-                print_ruby_value(v.dereference())
-                sys.stdout.write("\n")
+                try:
+                    print_ruby_value(v.dereference())
+                except:
+                    continue
+                finally:
+                    sys.stdout.write("\n")
 
     cfp -= 1
 
