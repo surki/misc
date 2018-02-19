@@ -12,66 +12,77 @@ RHash_t = gdb.lookup_type('struct RHash')
 RObject_t = gdb.lookup_type('struct RObject')
 RClass_t = gdb.lookup_type('struct RClass')
 global_entry_t = gdb.lookup_type('struct rb_global_entry')
+rb_thread_struct_t = gdb.lookup_type('struct rb_thread_struct')
 
-ID_ENTRY_STR = gdb.parse_and_eval('ID_ENTRY_STR')
-ID_ENTRY_SYM = gdb.parse_and_eval('ID_ENTRY_SYM')
-ID_ENTRY_SIZE = gdb.parse_and_eval('ID_ENTRY_SIZE')
-ID_ENTRY_UNIT = gdb.parse_and_eval('ID_ENTRY_UNIT')
+try:
+    ID_ENTRY_STR = gdb.parse_and_eval('ID_ENTRY_STR')
+    ID_ENTRY_SYM = gdb.parse_and_eval('ID_ENTRY_SYM')
+    ID_ENTRY_SIZE = gdb.parse_and_eval('ID_ENTRY_SIZE')
+    ID_ENTRY_UNIT = gdb.parse_and_eval('ID_ENTRY_UNIT')
+except:
+    ID_ENTRY_STR = 0
+    ID_ENTRY_SYM = 1
+    ID_ENTRY_SIZE = 2
+    ID_ENTRY_UNIT =512
 
-RUBY_FL_USHIFT = 12
-
-RUBY_FL_USER0 = (1<<RUBY_FL_USHIFT+0)
-RUBY_FL_USER1 = (1<<RUBY_FL_USHIFT+1)
-RUBY_FL_USER2 = (1<<RUBY_FL_USHIFT+2)
-RUBY_FL_USER3 = (1<<RUBY_FL_USHIFT+3)
-RUBY_FL_USER4 = (1<<RUBY_FL_USHIFT+4)
-RUBY_FL_USER5 = (1<<RUBY_FL_USHIFT+5)
-RUBY_FL_USER6 = (1<<RUBY_FL_USHIFT+6)
-RUBY_FL_USER7 = (1<<RUBY_FL_USHIFT+7)
-RUBY_FL_USER8 = (1<<RUBY_FL_USHIFT+8)
-RUBY_FL_USER9 = (1<<RUBY_FL_USHIFT+9)
-RUBY_FL_USER10 = (1<<RUBY_FL_USHIFT+10)
-RUBY_FL_USER11 = (1<<RUBY_FL_USHIFT+11)
-RUBY_FL_USER12 = (1<<RUBY_FL_USHIFT+12)
-RUBY_FL_USER13 = (1<<RUBY_FL_USHIFT+13)
-RUBY_FL_USER14 = (1<<RUBY_FL_USHIFT+14)
-RUBY_FL_USER15 = (1<<RUBY_FL_USHIFT+15)
-RUBY_FL_USER16 = (1<<RUBY_FL_USHIFT+16)
-RUBY_FL_USER17 = (1<<RUBY_FL_USHIFT+17)
-RUBY_FL_USER18 = (1<<RUBY_FL_USHIFT+18)
-RUBY_FL_USER19 = (1<<RUBY_FL_USHIFT+19)
-
-#RUBY_FL_USHIFT = gdb.parse_and_eval('RUBY_FL_USHIFT')
-
-# RUBY_FL_USER0  = gdb.parse_and_eval('RUBY_FL_USER0')
-# RUBY_FL_USER1  = gdb.parse_and_eval('RUBY_FL_USER1')
-# RUBY_FL_USER2  = gdb.parse_and_eval('RUBY_FL_USER2')
-# RUBY_FL_USER3  = gdb.parse_and_eval('RUBY_FL_USER3')
-# RUBY_FL_USER4  = gdb.parse_and_eval('RUBY_FL_USER4')
-# RUBY_FL_USER5  = gdb.parse_and_eval('RUBY_FL_USER5')
-# RUBY_FL_USER6  = gdb.parse_and_eval('RUBY_FL_USER6')
-# RUBY_FL_USER7  = gdb.parse_and_eval('RUBY_FL_USER7')
-# RUBY_FL_USER8  = gdb.parse_and_eval('RUBY_FL_USER8')
-# RUBY_FL_USER9  = gdb.parse_and_eval('RUBY_FL_USER9')
-# RUBY_FL_USER10 = gdb.parse_and_eval('RUBY_FL_USER10')
-# RUBY_FL_USER11 = gdb.parse_and_eval('RUBY_FL_USER11')
-# RUBY_FL_USER12 = gdb.parse_and_eval('RUBY_FL_USER12')
-# RUBY_FL_USER13 = gdb.parse_and_eval('RUBY_FL_USER13')
-# RUBY_FL_USER14 = gdb.parse_and_eval('RUBY_FL_USER14')
-# RUBY_FL_USER15 = gdb.parse_and_eval('RUBY_FL_USER15')
-# RUBY_FL_USER16 = gdb.parse_and_eval('RUBY_FL_USER16')
-# RUBY_FL_USER17 = gdb.parse_and_eval('RUBY_FL_USER17')
-# RUBY_FL_USER18 = gdb.parse_and_eval('RUBY_FL_USER18')
-# RUBY_FL_USER19 = gdb.parse_and_eval('RUBY_FL_USER19')
-
-# RUBY_FL_SINGLETON = gdb.parse_and_eval('RUBY_FL_SINGLETON')
+try:
+    RUBY_FL_USHIFT = gdb.parse_and_eval('RUBY_FL_USHIFT')
+    RUBY_FL_USER0  = gdb.parse_and_eval('RUBY_FL_USER0')
+    RUBY_FL_USER1  = gdb.parse_and_eval('RUBY_FL_USER1')
+    RUBY_FL_USER2  = gdb.parse_and_eval('RUBY_FL_USER2')
+    RUBY_FL_USER3  = gdb.parse_and_eval('RUBY_FL_USER3')
+    RUBY_FL_USER4  = gdb.parse_and_eval('RUBY_FL_USER4')
+    RUBY_FL_USER5  = gdb.parse_and_eval('RUBY_FL_USER5')
+    RUBY_FL_USER6  = gdb.parse_and_eval('RUBY_FL_USER6')
+    RUBY_FL_USER7  = gdb.parse_and_eval('RUBY_FL_USER7')
+    RUBY_FL_USER8  = gdb.parse_and_eval('RUBY_FL_USER8')
+    RUBY_FL_USER9  = gdb.parse_and_eval('RUBY_FL_USER9')
+    RUBY_FL_USER10 = gdb.parse_and_eval('RUBY_FL_USER10')
+    RUBY_FL_USER11 = gdb.parse_and_eval('RUBY_FL_USER11')
+    RUBY_FL_USER12 = gdb.parse_and_eval('RUBY_FL_USER12')
+    RUBY_FL_USER13 = gdb.parse_and_eval('RUBY_FL_USER13')
+    RUBY_FL_USER14 = gdb.parse_and_eval('RUBY_FL_USER14')
+    RUBY_FL_USER15 = gdb.parse_and_eval('RUBY_FL_USER15')
+    RUBY_FL_USER16 = gdb.parse_and_eval('RUBY_FL_USER16')
+    RUBY_FL_USER17 = gdb.parse_and_eval('RUBY_FL_USER17')
+    RUBY_FL_USER18 = gdb.parse_and_eval('RUBY_FL_USER18')
+    RUBY_FL_USER19 = gdb.parse_and_eval('RUBY_FL_USER19')
+    RUBY_FL_SINGLETON = gdb.parse_and_eval('RUBY_FL_SINGLETON')
+except:
+    RUBY_FL_USHIFT = 12
+    RUBY_FL_USER0 = (1<<RUBY_FL_USHIFT+0)
+    RUBY_FL_USER1 = (1<<RUBY_FL_USHIFT+1)
+    RUBY_FL_USER2 = (1<<RUBY_FL_USHIFT+2)
+    RUBY_FL_USER3 = (1<<RUBY_FL_USHIFT+3)
+    RUBY_FL_USER4 = (1<<RUBY_FL_USHIFT+4)
+    RUBY_FL_USER5 = (1<<RUBY_FL_USHIFT+5)
+    RUBY_FL_USER6 = (1<<RUBY_FL_USHIFT+6)
+    RUBY_FL_USER7 = (1<<RUBY_FL_USHIFT+7)
+    RUBY_FL_USER8 = (1<<RUBY_FL_USHIFT+8)
+    RUBY_FL_USER9 = (1<<RUBY_FL_USHIFT+9)
+    RUBY_FL_USER10 = (1<<RUBY_FL_USHIFT+10)
+    RUBY_FL_USER11 = (1<<RUBY_FL_USHIFT+11)
+    RUBY_FL_USER12 = (1<<RUBY_FL_USHIFT+12)
+    RUBY_FL_USER13 = (1<<RUBY_FL_USHIFT+13)
+    RUBY_FL_USER14 = (1<<RUBY_FL_USHIFT+14)
+    RUBY_FL_USER15 = (1<<RUBY_FL_USHIFT+15)
+    RUBY_FL_USER16 = (1<<RUBY_FL_USHIFT+16)
+    RUBY_FL_USER17 = (1<<RUBY_FL_USHIFT+17)
+    RUBY_FL_USER18 = (1<<RUBY_FL_USHIFT+18)
+    RUBY_FL_USER19 = (1<<RUBY_FL_USHIFT+19)
+    RUBY_FL_SINGLETON = RUBY_FL_USER0
 
 RARRAY_EMBED_FLAG = RUBY_FL_USER1
 RARRAY_EMBED_LEN_SHIFT = RUBY_FL_USHIFT+3
 RARRAY_EMBED_LEN_MASK = (RUBY_FL_USER4|RUBY_FL_USER3)
 
 tLAST_OP_ID = gdb.parse_and_eval('tLAST_OP_ID')
-ID_SCOPE_SHIFT = gdb.parse_and_eval('RUBY_ID_SCOPE_SHIFT')
+
+try:
+    ID_SCOPE_SHIFT = gdb.parse_and_eval('RUBY_ID_SCOPE_SHIFT')
+except:
+    ID_SCOPE_SHIFT = 4
+
 RUBY_Qfalse = gdb.parse_and_eval('RUBY_Qfalse')
 RUBY_Qtrue = gdb.parse_and_eval('RUBY_Qtrue')
 RUBY_Qnil = gdb.parse_and_eval('RUBY_Qnil')
@@ -178,7 +189,6 @@ def print_ruby_id(v):
     l = _rb_id2str(v)
     if l is not None:
         sys.stdout.write(get_rstring(l))
-    #print("ID value print not yet supported")
 
 def print_ruby_class(v):
     print("Class value print not yet supported")
@@ -403,7 +413,7 @@ def print_ruby_value(v):
         return
 
     if flags & RUBY_T_MASK == RUBY_T_STRING:
-        sys.stdout.write(get_rstring(v))
+        sys.stdout.write("\"" + get_rstring(v) + "\"")
         return
 
     if flags & RUBY_T_MASK == RUBY_T_REGEXP:
@@ -440,40 +450,43 @@ def print_global_variables():
 
 def get_ruby_localvariables(th=None, varname=None):
   if th == None:
-    th = gdb.parse_and_eval('ruby_current_thread')
+      th = gdb.parse_and_eval('ruby_current_thread')
   else:
-    th = gdb.parse_and_eval('(rb_thread_t *) %s' % th)
+      th = gdb.parse_and_eval('(rb_thread_t *) %s' % th)
 
   last_cfp = th['cfp']
   start_cfp = (th['stack'] + th['stack_size']).cast(control_frame_t.pointer()) - 2
   size = start_cfp - last_cfp + 1
   cfp = start_cfp
+  call_stack = []
   for i in range(0, int(size)):
-    if cfp['iseq'].dereference().address != 0:
-      if cfp['pc'].dereference().address != 0:
-        s = "{}:{}:in `{}'".format(get_rstring(cfp['iseq']['location']['path']),
-          get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['iseq_encoded']),
-                                   get_rstring(cfp['iseq']['location']['label']))
-        print(s)
-        local_table_size = (cfp['iseq']['local_table_size'])
-        print("local table size = %s" % local_table_size)
-        for j in range(0, int(local_table_size)):
-            id = cfp['iseq']['local_table'][j]
-            l = _rb_id2str(id)
-            if varname is not None and varname != get_rstring(l):
-                continue
+      if cfp['iseq'].dereference().address != 0:
+          if cfp['pc'].dereference().address != 0:
+              call_stack.append(cfp)
+      cfp -= 1
 
-            if l is not None:
-                sys.stdout.write("%s = " % get_rstring(l))
-                v = cfp['ep'] - (local_table_size - j - 1 + 2)
-                try:
-                    print_ruby_value(v.dereference())
-                except:
-                    continue
-                finally:
-                    sys.stdout.write("\n")
+  for cfp in reversed(call_stack):
+      s = "{}:{}:in `{}'".format(get_rstring(cfp['iseq']['location']['path']),
+                                 get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['iseq_encoded']),
+                                 get_rstring(cfp['iseq']['location']['label']))
+      print(s)
+      local_table_size = (cfp['iseq']['local_table_size'])
+      print("local table size = %s" % local_table_size)
+      for j in range(0, int(local_table_size)):
+          id = cfp['iseq']['local_table'][j]
+          l = _rb_id2str(id)
+          if varname is not None and varname != get_rstring(l):
+              continue
 
-    cfp -= 1
+          if l is not None:
+              sys.stdout.write("%s = " % get_rstring(l))
+              v = cfp['ep'] - (local_table_size - j - 1 + 2)
+              try:
+                  print_ruby_value(v.dereference())
+              except:
+                  continue
+              finally:
+                  sys.stdout.write("\n")
 
 def get_rstring(addr):
   if addr is None:
@@ -534,6 +547,31 @@ def get_ruby_stacktrace(th=None, folded=False):
   if folded:
       print()
 
+def get_rb_thread_for_current_thread():
+    # We will get the current thread id from gdb, iterate over all ruby
+    # threads and find the corresponding rb_thread_t
+
+    # TODO: Can't we directly pull the thread id out of gdb.selected_thread()?
+    t = gdb.selected_thread()
+    if t is None:
+        print("No current thread")
+        return None
+
+    curr_th_id = re.search('Thread ([0-9a-zx]+)', gdb.execute('info thread %d' % t.num, to_string=True)).group(1);
+    curr_th_id = int(curr_th_id, 16)
+    #curr_th_id=gdb.parse_and_eval('(pthread_t)pthread_self()')
+
+    head = gdb.parse_and_eval('&ruby_current_thread->vm->living_threads.n')
+    t = gdb.parse_and_eval('ruby_current_thread->vm->living_threads.n.next')
+    while (t != head):
+        ti = t.cast(rb_thread_struct_t.pointer())
+        if ti['thread_id'] == curr_th_id:
+            #print("found matching ruby thread")
+            return ti
+        t = t['next']
+
+    return None
+
 class AnalyzeSegFaultCmd(gdb.Command):
     "Analyze ruby segfault info"
 
@@ -591,7 +629,7 @@ class AnalyzeSegFaultCmd(gdb.Command):
                 print("Couldn't find segfault frame for pid %s" % inferior.pid)
 
 class RubyStackTraceCmd(gdb.Command):
-    "Print Ruby stacktrace"
+    "Print stacktrace of current Ruby thread (!= current gdb thread)"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_bt", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
@@ -602,6 +640,17 @@ class RubyStackTraceCmd(gdb.Command):
         if len(argv) > 0 and argv[0] == 'folded':
             folded = True
         get_ruby_stacktrace(folded=folded)
+
+class RubyStackTraceCurrCmd(gdb.Command):
+    "Print stacktrace of current gdb thread"
+
+    def __init__(self):
+        gdb.Command.__init__(self, "ruby_bt_curr", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
+
+    def invoke(self, arg, _from_tty):
+        ti = get_rb_thread_for_current_thread()
+        if ti is not None:
+            get_ruby_stacktrace(th=ti)
 
 class RubyLocalVariablesCmd(gdb.Command):
     "Print Ruby local variables, by walking stack. Pass variable name to filter"
@@ -616,6 +665,22 @@ class RubyLocalVariablesCmd(gdb.Command):
             varname = argv[0]
         get_ruby_localvariables(varname=varname)
 
+class RubyLocalVariablesCurrCmd(gdb.Command):
+    "Print current gdb thread's Ruby local variables, by walking stack. Pass variable name to filter"
+
+    def __init__(self):
+        gdb.Command.__init__(self, "ruby_locals_curr", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
+
+    def invoke(self, arg, _from_tty):
+        argv = gdb.string_to_argv(arg)
+        varname = None
+        if len(argv) > 0:
+            varname = argv[0]
+
+        ti = get_rb_thread_for_current_thread()
+        if ti is not None:
+            get_ruby_localvariables(th=ti, varname=varname)
+
 class RubyGlovalVariablesCmd(gdb.Command):
     "Print Ruby global variables"
 
@@ -627,5 +692,7 @@ class RubyGlovalVariablesCmd(gdb.Command):
 
 AnalyzeSegFaultCmd()
 RubyStackTraceCmd()
+RubyStackTraceCurrCmd()
 RubyLocalVariablesCmd()
+RubyLocalVariablesCurrCmd()
 RubyGlovalVariablesCmd()
