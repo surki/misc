@@ -466,14 +466,12 @@ def get_ruby_localvariables(th=None, varname=None):
       cfp -= 1
 
   for cfp in reversed(call_stack):
-      s = "{}:{}:in `{}'".format(get_rstring(cfp['iseq']['location']['path']),
-                                 get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['iseq_encoded']),
-                                 get_rstring(cfp['iseq']['location']['label']))
-      print(s)
-      local_table_size = (cfp['iseq']['local_table_size'])
+      print(get_func_info(cfp))
+      local_table = get_local_table(cfp)
+      local_table_size = get_local_table_size(cfp)
       print("local table size = %s" % local_table_size)
       for j in range(0, int(local_table_size)):
-          id = cfp['iseq']['local_table'][j]
+          id = local_table[j]
           l = _rb_id2str(id)
           if varname is not None and varname != get_rstring(l):
               continue
@@ -501,8 +499,13 @@ def get_rstring(addr):
 def get_lineno(iseq, pos):
   if pos != 0:
     pos -= 1
-  t = iseq['line_info_table']
-  t_size = iseq['line_info_size']
+
+  try:
+      t = iseq['body']['line_info_table']
+      t_size = iseq['body']['line_info_size']
+  except:
+      t = iseq['line_info_table']
+      t_size = iseq['line_info_size']
 
   if t_size == 0:
     return 0
@@ -517,35 +520,58 @@ def get_lineno(iseq, pos):
 
   return t[t_size-1]['line_no']
 
+def get_func_info(cfp):
+    try:
+        path = get_rstring(cfp['iseq']['location']['path'])
+        label = get_rstring(cfp['iseq']['location']['label'])
+        lineno = get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['iseq_encoded'])
+    except:
+        # Ruby 2.3+
+        path = get_rstring(cfp['iseq']['body']['location']['path'])
+        label = get_rstring(cfp['iseq']['body']['location']['label'])
+        lineno = get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['body']['iseq_encoded'])
+
+    return "{}:{}:in `{}'".format(path, lineno, label)
+
+def get_local_table(cfp):
+    try:
+        local_table = (cfp['iseq']['local_table'])
+    except:
+        local_table = (cfp['iseq']['body']['local_table'])
+    return local_table
+
+def get_local_table_size(cfp):
+    try:
+        local_table_size = (cfp['iseq']['local_table_size'])
+    except:
+        local_table_size = (cfp['iseq']['body']['local_table_size'])
+    return local_table_size
+
 def get_ruby_stacktrace(th=None, folded=False):
-  if th == None:
-    th = gdb.parse_and_eval('ruby_current_thread')
-  else:
-    th = gdb.parse_and_eval('(rb_thread_t *) %s' % th)
+    if th == None:
+        th = gdb.parse_and_eval('ruby_current_thread')
+    else:
+        th = gdb.parse_and_eval('(rb_thread_t *) %s' % th)
 
-  last_cfp = th['cfp']
-  start_cfp = (th['stack'] + th['stack_size']).cast(control_frame_t.pointer()) - 2
-  size = start_cfp - last_cfp + 1
-  cfp = start_cfp
-  call_stack = []
-  for i in range(0, int(size)):
-    if cfp['iseq'].dereference().address != 0:
-      if cfp['pc'].dereference().address != 0:
-        s = "{}:{}:in `{}'".format(get_rstring(cfp['iseq']['location']['path']),
-          get_lineno(cfp['iseq'], cfp['pc'] - cfp['iseq']['iseq_encoded']),
-          get_rstring(cfp['iseq']['location']['label']))
-        call_stack.append(s)
+    last_cfp = th['cfp']
+    start_cfp = (th['stack'] + th['stack_size']).cast(control_frame_t.pointer()) - 2
+    size = start_cfp - last_cfp + 1
+    cfp = start_cfp
+    call_stack = []
+    for i in range(0, int(size)):
+        if cfp['iseq'].dereference().address != 0:
+            if cfp['pc'].dereference().address != 0:
+                call_stack.append(get_func_info(cfp))
+        cfp -= 1
 
-    cfp -= 1
+    for i in reversed(call_stack):
+        if folded:
+            sys.stdout.write("%s;" % i)
+        else:
+            print(i)
 
-  for i in reversed(call_stack):
-      if folded:
-          sys.stdout.write("%s;" % i)
-      else:
-          print(i)
-
-  if folded:
-      print()
+    if folded:
+        print()
 
 def get_rb_thread_for_current_thread():
     # We will get the current thread id from gdb, iterate over all ruby
@@ -557,7 +583,8 @@ def get_rb_thread_for_current_thread():
         print("No current thread")
         return None
 
-    curr_th_id = re.search('Thread ([0-9a-zx]+)', gdb.execute('info thread %d' % t.num, to_string=True)).group(1);
+    gdb_th_num = t.num
+    curr_th_id = re.search('Thread ([0-9a-zx]+)', gdb.execute('info thread %d' % gdb_th_num, to_string=True)).group(1);
     curr_th_id = int(curr_th_id, 16)
     #curr_th_id=gdb.parse_and_eval('(pthread_t)pthread_self()')
 
@@ -569,6 +596,8 @@ def get_rb_thread_for_current_thread():
             #print("found matching ruby thread")
             return ti
         t = t['next']
+
+    print("Thread {0} (0x{1:x}) is not a ruby thread!".format(gdb_th_num,curr_th_id))
 
     return None
 
