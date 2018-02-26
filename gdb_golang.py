@@ -29,9 +29,9 @@ class SliceValue:
 
 def print_stack(pc, sp, ptr, pat=None):
     save_frame = gdb.selected_frame()
-    gdb.parse_and_eval('$save_sp = $sp')
+    gdb.parse_and_eval('$save_sp = $rsp')
     gdb.parse_and_eval('$save_pc = $pc')
-    gdb.parse_and_eval('$sp = {0}'.format(str(sp)))
+    gdb.parse_and_eval('$rsp = {0}'.format(str(sp)))
     gdb.parse_and_eval('$pc = {0}'.format(str(pc)))
     printed = False
     try:
@@ -39,14 +39,17 @@ def print_stack(pc, sp, ptr, pat=None):
             val = gdb.execute("bt", to_string=True)
             if val.lower().find(pat.lower()) == -1:
                 return
-            print('==== goid :', ptr['goid'])
+            print('Goroutine %d :' % ptr['goid'])
             print(val)
             printed = True
+            print("")
         else:
+            print('Goroutine %d :' % ptr['goid'])
             gdb.execute("bt")
             printed = True
+            print("")
     finally:
-        gdb.parse_and_eval('$sp = $save_sp')
+        gdb.parse_and_eval('$rsp = $save_sp')
         gdb.parse_and_eval('$pc = $save_pc')
         save_frame.select()
     return printed
