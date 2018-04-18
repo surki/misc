@@ -658,44 +658,53 @@ class AnalyzeSegFaultCmd(gdb.Command):
                 print("Couldn't find segfault frame for pid %s" % inferior.pid)
 
 class RubyStackTraceCmd(gdb.Command):
-    "Print stacktrace of current Ruby thread (!= current gdb thread)"
+    "Print Ruby callstack of current GDB thread (which may/may not be current Ruby thread holding GVL)"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_bt", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
 
     def invoke(self, arg, _from_tty):
+        ti = get_rb_thread_for_current_thread()
+        if ti is None:
+            print("Could not find ruby thread info for current gdb thread")
+            return
+
         argv = gdb.string_to_argv(arg)
         folded = False
         if len(argv) > 0 and argv[0] == 'folded':
             folded = True
-        get_ruby_stacktrace(folded=folded)
+        get_ruby_stacktrace(th=ti, folded=folded)
 
 class RubyStackTraceCurrCmd(gdb.Command):
-    "Print stacktrace of current gdb thread"
+    "Print stacktrace of current Ruby thread (which may/may not be current GDB thread)"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_bt_curr", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
 
     def invoke(self, arg, _from_tty):
-        ti = get_rb_thread_for_current_thread()
-        if ti is not None:
-            get_ruby_stacktrace(th=ti)
+        get_ruby_stacktrace()
 
 class RubyLocalVariablesCmd(gdb.Command):
-    "Print Ruby local variables, by walking stack. Pass variable name to filter"
+    "Print Ruby local variables, by walking current GDB thread's Ruby stack. Pass variable name to filter"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_locals", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
 
     def invoke(self, arg, _from_tty):
+        ti = get_rb_thread_for_current_thread()
+        if ti is None:
+            print("Could not find ruby thread info for current gdb thread")
+            return
+
         argv = gdb.string_to_argv(arg)
         varname = None
         if len(argv) > 0:
             varname = argv[0]
-        get_ruby_localvariables(varname=varname)
+
+        get_ruby_localvariables(th=ti, varname=varname)
 
 class RubyLocalVariablesCurrCmd(gdb.Command):
-    "Print current gdb thread's Ruby local variables, by walking stack. Pass variable name to filter"
+    "Print Ruby local variables, by walking current (holding GVL) Ruby thread's stack. Pass variable name to filter"
 
     def __init__(self):
         gdb.Command.__init__(self, "ruby_locals_curr", gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
@@ -706,9 +715,7 @@ class RubyLocalVariablesCurrCmd(gdb.Command):
         if len(argv) > 0:
             varname = argv[0]
 
-        ti = get_rb_thread_for_current_thread()
-        if ti is not None:
-            get_ruby_localvariables(th=ti, varname=varname)
+        get_ruby_localvariables(varname=varname)
 
 class RubyGlovalVariablesCmd(gdb.Command):
     "Print Ruby global variables"
