@@ -473,7 +473,7 @@ def get_ruby_localvariables(th=None, varname=None):
       for j in range(0, int(local_table_size)):
           id = local_table[j]
           l = _rb_id2str(id)
-          if varname is not None and varname != get_rstring(l):
+          if varname is not None and varname not in get_rstring(l):
               continue
 
           if l is not None:
