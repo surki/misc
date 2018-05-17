@@ -533,23 +533,20 @@ std::string BufferHelper::getLenEncString(Buffer::Instance& data) {
   s.resize(size);
 
   return s;
-
-  // // TODO: Replace it with string.reserve()
-  // std::vector<uint8_t> mem(size);
-
-  // getBytes(data, &mem[0], size);
-
-  // return std::string(mem.begin(), mem.end());
 }
 
-std::string BufferHelper::getStringFromBuffer(Buffer::Instance& data, size_t len) {
-  if (len <= 0) {
+std::string BufferHelper::getStringFromBuffer(Buffer::Instance& data, size_t size) {
+  if (size == 0) {
     return std::string();
   }
 
-  std::vector<uint8_t> b(len);
-  BufferHelper::getBytes(data, &b[0], len);
-  return std::string(b.begin(), b.end());
+  std::string s;
+  s.reserve(size);
+  assert(s.capacity() >= size);
+  getBytes(data, reinterpret_cast<uint8_t *>(&s[0]), size);
+  s.resize(size);
+
+  return s;
 }
 
 std::string BufferHelper::getStringFromRestOfBuffer(Buffer::Instance& data) {
