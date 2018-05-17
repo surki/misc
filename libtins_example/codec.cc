@@ -565,7 +565,7 @@ void Packet::fromBuffer(Buffer::Instance& buffer) {
 
   buffer_.move(buffer, length);
 
-  moreData_ = ((length+4) >= MAX_PAYLOAD_LEN);
+  moreData_ = (length >= MAX_PAYLOAD_LEN);
 
   return;
 }
