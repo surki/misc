@@ -302,7 +302,9 @@ void MySQLDecoder::handleQueryResponse(Packet& pkt) {
         break;
       }
 
-      ENVOY_LOG(trace, "Rows\n");
+      RowMessage msg;
+      msg.fromPacket(pkt);
+      ENVOY_LOG(trace, "Rows {}\n", msg.toString());
       break;
     }
     }
@@ -1090,5 +1092,25 @@ std::string QueryMessage::toString() {
   return s.str();
 }
 
+RowMessage::RowMessage() {}
+
+void RowMessage::fromPacket(Packet& pkt) {
+  Buffer::Instance& buffer = pkt.buffer_;
+  while (buffer.length() > 0) {
+    auto s = BufferHelper::getLenEncString(buffer);
+    info_.push_back(s);
+  }
+}
+
+std::string RowMessage::toString() {
+  std::stringstream s;
+
+  s << info_.size() << " items:: ";
+  for (const auto& i : info_) {
+    s << i.size() << " ";
+  }
+
+  return s.str();
+}
 
 }; // namespace MySQL

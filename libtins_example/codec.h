@@ -96,6 +96,7 @@ public:
   uint8_t seqId_;
   Envoy::Buffer::OwnedImpl buffer_;
   uint32_t capabilities_;
+  bool moreData_;
 
   Packet(uint32_t capabilities);
   void fromBuffer(Envoy::Buffer::Instance& buffer);
@@ -184,6 +185,17 @@ public:
   uint8_t command_;
   std::string commandName_;
   std::string info_;
+
+  void fromPacket(Packet& pkt);
+
+  std::string toString();
+};
+
+class RowMessage : public Message {
+public:
+  RowMessage();
+
+  std::vector<std::string> info_;
 
   void fromPacket(Packet& pkt);
 
