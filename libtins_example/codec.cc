@@ -512,10 +512,9 @@ std::string BufferHelper::getLenPrefixedString(Buffer::Instance& data) {
   }
 
   std::string s;
-  s.reserve(size);
+  s.resize(size);
   assert(s.capacity() >= size);
   getBytes(data, reinterpret_cast<uint8_t *>(&s[0]), size);
-  s.resize(size);
 
   return s;
 }
@@ -527,10 +526,9 @@ std::string BufferHelper::getLenEncString(Buffer::Instance& data) {
   }
 
   std::string s;
-  s.reserve(size);
+  s.resize(size);
   assert(s.capacity() >= size);
   getBytes(data, reinterpret_cast<uint8_t *>(&s[0]), size);
-  s.resize(size);
 
   return s;
 }
@@ -540,11 +538,12 @@ std::string BufferHelper::getStringFromBuffer(Buffer::Instance& data, size_t siz
     return std::string();
   }
 
+  // TODO: Replace it with std::unique<char *>? can avoid unnessary
+  // initialization in s.resize()
   std::string s;
-  s.reserve(size);
+  s.resize(size);
   assert(s.capacity() >= size);
   getBytes(data, reinterpret_cast<uint8_t *>(&s[0]), size);
-  s.resize(size);
 
   return s;
 }
